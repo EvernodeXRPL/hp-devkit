@@ -4,31 +4,30 @@ imgname="evernodedev/hotpocket:latest-ubt.20.04-njs.16"
 volmount="/devkitvol"
 
 command=$1
-cluster=$2
+cluster="${HP_CLUSTER:-default}"
 volume="${globalprefix}_${cluster}_vol"
 network="${globalprefix}_${cluster}_net"
 containerprefix="${globalprefix}_${cluster}_con"
-nodecount=0
 
 echo "Hot Pocket development toolkit"
 
-if [ "$command" = "create" ] || [ "$command" = "destroy" ] ; then
+if [ "$command" = "create" ] || [ "$command" = "destroy" ] || [ "$command" = "start" ] || [ "$command" = "stop" ] || [ "$command" = "logs" ] ; then
     echo "command: $command"
 else
     echo "Invalid command."
-    echo "Expected: create | destroy"
+    echo "Expected: create | destroy | start | stop | logs"
     exit 1
 fi
 
 [ -z $cluster ] && echo "Cluster name not specified." && exit 1
 
-function parsenodecountarg() {
-    ! [ "$1" -eq "$1" ] 2> /dev/null && echo "Node count must be a number." && return 1
-    [ $1 -le 0 ] && echo "Node count must be 1 or higher." && return 1
-    nodecount=$1
+function validatenodenumarg {
+    ! [ "$1" -eq "$1" ] 2> /dev/null && echo "Arg must be a number." && return 1
+    [ $1 -le 0 ] && echo "Arg must be 1 or higher." && return 1
+    return 0
 }
 
-function exists() {
+function exists {
     local output=$(docker $1 ls | grep $2)
     if [ -z "$output" ] ; then
         return 1
@@ -37,7 +36,7 @@ function exists() {
     fi
 }
 
-function clusterexists() {
+function clusterexists {
     if exists "volume" $volume || exists "network" $network || exists "container" $containerprefix ; then
         return 0
     else
@@ -45,25 +44,39 @@ function clusterexists() {
     fi
 }
 
-function createcluster() {
+function getcontainercount {
+    docker ps -a | grep $containerprefix | wc -l
+}
+
+function createcluster {
     clusterexists && echo "Cluster '$cluster' already exists." && exit 1
     docker volume create $volume
     docker network create $network
 
-    for ((i=1; i<=$nodecount; i++)); 
+    for ((i=1; i<=$1; i++));
     do
+        # Create contract instance directory.
+        docker run --rm --mount type=volume,src=$volume,dst=$volmount --rm $imgname new $volmount/node$i
+
+        # Create container for hot pocket instance.
         local containername="${containerprefix}_$i"
-        docker container create --name $containername --privileged --mount type=volume,src=$volume,dst=$volmount $imgname
+        docker container create --name $containername --privileged --mount type=volume,src=$volume,dst=$volmount $imgname run $volmount/node$i
     done
 }
 
-function destroycluster() {
+function destroycluster {
     ! clusterexists && echo "Cluster '$cluster' does not exist." && exit 1
 
-    local containercount=$(docker ps -a | grep $containerprefix | wc -l)
+    echo "action: stop"
+    changeclusterstatus "stop"
+
+    # Delete top-most matching container N times.
+    # (This is just in case there are gaps in container numbering due to any tampering by user)
+    echo "action: delete"
+    local containercount=$(getcontainercount)
     for ((i=1; i<=$containercount; i++)); 
     do
-        local containername="${containerprefix}_$i"
+        local containername="$(docker ps -a --format "{{.Names}}" | grep $containerprefix | head -1)"
         docker container rm $containername
     done
 
@@ -71,9 +84,33 @@ function destroycluster() {
     exists "network" $network && docker network rm $network
 }
 
+function changeclusterstatus {
+    ! clusterexists && echo "Cluster '$cluster' does not exist." && exit 1
+
+    local containercount=$(getcontainercount)
+    for ((i=1; i<=$containercount; i++)); 
+    do
+        local containername="${containerprefix}_$i"
+        docker $1 $containername
+    done
+}
+
+function attachlogs {
+    ! clusterexists && echo "Cluster '$cluster' does not exist." && exit 1
+    local containername="${containerprefix}_$1"
+    docker logs -f --tail=5 $containername
+}
+
 if [ $command = "create" ]; then
-    ! parsenodecountarg $3 && echo "Usage: create <cluster name> <node count>" && exit 1
-    createcluster
+    ! validatenodenumarg $2 && echo "Usage: create <node count>" && exit 1
+    createcluster $2
 elif [ $command = "destroy" ]; then
     destroycluster
+elif [ $command = "start" ]; then
+    changeclusterstatus start
+elif [ $command = "stop" ]; then
+    changeclusterstatus stop
+elif [ $command = "logs" ]; then
+    ! validatenodenumarg $2 && echo "Usage: logs <node id>" && exit 1
+    attachlogs $2
 fi

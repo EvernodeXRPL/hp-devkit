@@ -19,4 +19,4 @@ COPY --from=builder /build/docker-extracted/usr/bin/docker /usr/bin/
 COPY --from=builder /build/scripts/cluster.sh /usr/bin/cluster
 
 # docker build -t hpdevtoolkit .
-# docker run --rm --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock hpdevtoolkit cluster
+# docker run -it --rm --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock hpdevtoolkit cluster create my 2
