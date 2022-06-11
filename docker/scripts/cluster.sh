@@ -66,22 +66,36 @@ function get_container_count {
     docker ps -a | grep $container_prefix | wc -l
 }
 
+function create_instance {
+    local node=$1
+    # Create contract instance directory.
+    docker run --rm --mount type=volume,src=$volume,dst=$volume_mount --rm $hotpocket_image new $volume_mount/node$node
+
+    # Create container for hot pocket instance.
+    local container_name="${container_prefix}_$node"
+    docker container create --name $container_name --privileged --mount type=volume,src=$volume,dst=$volume_mount $hotpocket_image run $(contract_dir_mount_path $node)
+}
+
+function change_instance_status {
+    local action=$1
+    local node=$2
+    local container_name="${container_prefix}_$node"
+    docker $action $container_name
+}
+
 function create_cluster {
     ensure_cluser_not_exists
 
-    echo "Creating '$cluster' cluster of size $1"
+    local size=$1
+    echo "Creating '$cluster' cluster of size $size"
     docker volume create $volume
     docker network create $network
 
-    for ((i=1; i<=$1; i++));
+    for ((i=1; i<=$size; i++));
     do
-        # Create contract instance directory.
-        docker run --rm --mount type=volume,src=$volume,dst=$volume_mount --rm $hotpocket_image new $volume_mount/node$i
-
-        # Create container for hot pocket instance.
-        local container_name="${container_prefix}_$i"
-        docker container create --name $container_name --privileged --mount type=volume,src=$volume,dst=$volume_mount $hotpocket_image run $(contract_dir_mount_path $i)
+        create_instance $i &
     done
+    wait
 }
 
 function destroy_cluster {
@@ -95,6 +109,7 @@ function destroy_cluster {
         local container_name="$(docker ps -a --format "{{.Names}}" | grep $container_prefix | head -1)"
         docker container rm $container_name
     done
+    wait
 
     exists "volume" $volume && docker volume rm $volume
     exists "network" $network && docker network rm $network
@@ -110,10 +125,10 @@ function change_cluster_status {
     do
         # If valid node no. has been specified, target that node. Otherwise target all nodes.
         if ! [ "$node" -eq "$node" ] 2> /dev/null || [ $node -le 0 ] || [ $i -eq $node ] ; then
-            local container_name="${container_prefix}_$i"
-            docker $action $container_name
+            change_instance_status $action $i &
         fi
     done
+    wait
 }
 
 function attach_logs {
@@ -122,26 +137,32 @@ function attach_logs {
     docker logs -f --tail=5 $container_name
 }
 
+function sync_instance {
+    local node=$1
+    local contract_dir=$(contract_dir_mount_path $node)
+    rm -rf $contract_dir/ledger_fs/*  $contract_dir/contract_fs/*
+    mkdir -p $contract_dir/contract_fs/seed
+    cp -r $bundle_mount $contract_dir/contract_fs/seed/state
+
+    # Merge contract config overrides.
+    local cfg_file=$contract_dir/cfg/hp.cfg
+    local override_file=$contract_dir/contract_fs/seed/state/$config_overrides_file
+    if [ -f $override_file ] ; then
+        echo "Applying hp.cfg overrides"
+        jq -s '.[0] * .[1]' $cfg_file $override_file > $cfg_file.merged
+        mv $cfg_file.merged $cfg_file
+        rm $override_file
+    fi
+}
+
 function sync_contract_bundle {
     ensure_cluster_not_running
     local container_count=$(get_container_count)
     for ((i=1; i<=$container_count; i++));
     do
-        contract_dir=$(contract_dir_mount_path $i)
-        rm -rf $contract_dir/ledger_fs/*  $contract_dir/contract_fs/*
-        mkdir -p $contract_dir/contract_fs/seed
-        cp -r $bundle_mount $contract_dir/contract_fs/seed/state
-
-        # Merge contract config overrides.
-        local cfg_file=$contract_dir/cfg/hp.cfg
-        local override_file=$contract_dir/contract_fs/seed/state/$config_overrides_file
-        if [ -f $override_file ] ; then
-            echo "Applying hp.cfg overrides"
-            jq -s '.[0] * .[1]' $cfg_file $override_file > $cfg_file.merged
-            mv $cfg_file.merged $cfg_file
-            rm $override_file
-        fi
+        sync_instance $i &
     done
+    wait
 }
 
 if [ $command = "create" ]; then
