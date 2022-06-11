@@ -12,9 +12,9 @@ hotpocket_image=$HOTPOCKET_IMAGE
 
 if [ "$command" = "create" ] || [ "$command" = "destroy" ] || [ "$command" = "start" ] || [ "$command" = "stop" ] ||
     [ "$command" = "logs" ] || [ "$command" = "sync" ] ; then
-    echo "command: $command"
+    echo "sub-command: $command"
 else
-    echo "Invalid command."
+    echo "Invalid sub-command."
     echo "Expected: create | destroy | start | stop | logs | sync"
     exit 1
 fi
@@ -86,12 +86,8 @@ function create_cluster {
 function destroy_cluster {
     ensure_cluser_exists
 
-    echo "action: stop"
-    change_cluster_status "stop"
-
     # Delete top-most matching container N times.
     # (This is just in case there are gaps in container numbering due to any tampering by user)
-    echo "action: delete"
     local container_count=$(get_container_count)
     for ((i=1; i<=$container_count; i++)); 
     do
@@ -106,11 +102,16 @@ function destroy_cluster {
 function change_cluster_status {
     ensure_cluser_exists
 
+    local action=$1
+    local node=$2
     local container_count=$(get_container_count)
-    for ((i=1; i<=$container_count; i++)); 
+    for ((i=1; i<=$container_count; i++));
     do
-        local container_name="${container_prefix}_$i"
-        docker $1 $container_name
+        # If valid node no. has been specified, target that node. Otherwise target all nodes.
+        if ! [ "$node" -eq "$node" ] 2> /dev/null || [ $node -le 0 ] || [ $i -eq $node ] ; then
+            local container_name="${container_prefix}_$i"
+            docker $action $container_name
+        fi
     done
 }
 
@@ -138,9 +139,9 @@ if [ $command = "create" ]; then
 elif [ $command = "destroy" ]; then
     destroy_cluster
 elif [ $command = "start" ]; then
-    change_cluster_status start
+    change_cluster_status start $2
 elif [ $command = "stop" ]; then
-    change_cluster_status stop
+    change_cluster_status stop $2
 elif [ $command = "logs" ]; then
     ! validate_node_num_arg $2 && echo "Usage: logs <node id>" && exit 1
     attach_logs $2
