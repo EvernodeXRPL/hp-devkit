@@ -8,14 +8,16 @@ cluster="${HP_CLUSTER:-default}"
 volume="${global_prefix}_${cluster}_vol"
 network="${global_prefix}_${cluster}_net"
 container_prefix="${global_prefix}_${cluster}_con"
+bundle_mount="${volmount}/contract_bundle"
 
 echo "Hot Pocket development toolkit"
 
-if [ "$command" = "create" ] || [ "$command" = "destroy" ] || [ "$command" = "start" ] || [ "$command" = "stop" ] || [ "$command" = "logs" ] ; then
+if [ "$command" = "create" ] || [ "$command" = "destroy" ] || [ "$command" = "start" ] || [ "$command" = "stop" ] ||
+    [ "$command" = "logs" ] || [ "$command" = "sync" ] ; then
     echo "command: $command"
 else
     echo "Invalid command."
-    echo "Expected: create | destroy | start | stop | logs"
+    echo "Expected: create | destroy | start | stop | logs | sync"
     exit 1
 fi
 
@@ -25,6 +27,10 @@ function validate_node_num_arg {
     ! [ "$1" -eq "$1" ] 2> /dev/null && echo "Arg must be a number." && return 1
     [ $1 -le 0 ] && echo "Arg must be 1 or higher." && return 1
     return 0
+}
+
+function contract_dir_mount_path {
+    echo "$volmount/node$1"
 }
 
 function exists {
@@ -44,12 +50,25 @@ function cluster_exists {
     fi
 }
 
+function ensure_cluser_exists {
+    ! cluster_exists && echo "Cluster '$cluster' does not exist." && exit 1
+}
+
+function ensure_cluser_not_exists {
+    cluster_exists && echo "Cluster '$cluster' already exists." && exit 1
+}
+
+function ensure_cluster_not_running {
+    local running_containers=$(docker ps -a --filter "status=running" | grep $container_prefix | wc -l)
+    [ "$running_containers" != "0" ] && echo "Cluster '$cluster' needs to be stopped." && exit 1
+}
+
 function get_container_count {
     docker ps -a | grep $container_prefix | wc -l
 }
 
 function create_cluster {
-    cluster_exists && echo "Cluster '$cluster' already exists." && exit 1
+    ensure_cluser_not_exists
     docker volume create $volume
     docker network create $network
 
@@ -60,12 +79,12 @@ function create_cluster {
 
         # Create container for hot pocket instance.
         local container_name="${container_prefix}_$i"
-        docker container create --name $container_name --privileged --mount type=volume,src=$volume,dst=$volmount $imgname run $volmount/node$i
+        docker container create --name $container_name --privileged --mount type=volume,src=$volume,dst=$volmount $imgname run $(contract_dir_mount_path $i)
     done
 }
 
 function destroy_cluster {
-    ! cluster_exists && echo "Cluster '$cluster' does not exist." && exit 1
+    ensure_cluser_exists
 
     echo "action: stop"
     change_cluster_status "stop"
@@ -85,7 +104,7 @@ function destroy_cluster {
 }
 
 function change_cluster_status {
-    ! cluster_exists && echo "Cluster '$cluster' does not exist." && exit 1
+    ensure_cluser_exists
 
     local container_count=$(get_container_count)
     for ((i=1; i<=$container_count; i++)); 
@@ -101,6 +120,18 @@ function attach_logs {
     docker logs -f --tail=5 $container_name
 }
 
+function sync_contract_bundle {
+    ensure_cluster_not_running
+    local container_count=$(get_container_count)
+    for ((i=1; i<=$container_count; i++));
+    do
+        contract_dir=$(contract_dir_mount_path $i)
+        rm -rf $contract_dir/ledger_fs/*  $contract_dir/contract_fs/*
+        mkdir -p $contract_dir/contract_fs/seed
+        cp -r $bundle_mount $contract_dir/contract_fs/seed/state
+    done
+}
+
 if [ $command = "create" ]; then
     ! validate_node_num_arg $2 && echo "Usage: create <node count>" && exit 1
     create_cluster $2
@@ -113,4 +144,6 @@ elif [ $command = "stop" ]; then
 elif [ $command = "logs" ]; then
     ! validate_node_num_arg $2 && echo "Usage: logs <node id>" && exit 1
     attach_logs $2
+elif [ $command = "sync" ]; then
+    sync_contract_bundle
 fi
