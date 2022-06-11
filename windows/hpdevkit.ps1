@@ -11,6 +11,7 @@ $Network = "$($GlobalPrefix)_$($Cluster)_net"
 $ContainerPrefix = "$($GlobalPrefix)_$($Cluster)_con"
 $BundleMount = "$($VolumeMount)/contract_bundle"
 $DeploymentContainerName = "$($GlobalPrefix)_$($Cluster)_deploymanager"
+$ConfigOverridesFile = "$($GlobalPrefix)_overrides.cfg"
 
 function DevKitContainer([string]$Mode, [string]$Name, [switch]$Detached, [switch]$AutoRemove, [switch]$MountSock, [switch]$MountVolume, [string]$Cmd) {
 
@@ -32,8 +33,9 @@ function DevKitContainer([string]$Mode, [string]$Name, [switch]$Detached, [switc
     }
 
     # Env variables.
-    $Command += " -e CLUSTER=$($Cluster) -e CLUSTER_SIZE=$($ClusterSize) -e VOLUME=$($Volume) -e NETWORK=$($Network)"
+    $Command += " -e CLUSTER=$($Cluster) -e CLUSTER_SIZE=$($ClusterSize) -e DEFAULT_NODE=$($DefaultNode) -e VOLUME=$($Volume) -e NETWORK=$($Network)"
     $Command += " -e CONTAINER_PREFIX=$($ContainerPrefix) -e VOLUME_MOUNT=$($VolumeMount) -e BUNDLE_MOUNT=$($BundleMount) -e HOTPOCKET_IMAGE=$($HotPocketImage)"
+    $Command += " -e CONFIG_OVERRIDES_FILE=$($ConfigOverridesFile)"
 
     $Command += " $($DevKitImage)"
     if ($Cmd) {

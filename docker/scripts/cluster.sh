@@ -9,6 +9,7 @@ container_prefix=$CONTAINER_PREFIX
 volume_mount=$VOLUME_MOUNT
 bundle_mount=$BUNDLE_MOUNT
 hotpocket_image=$HOTPOCKET_IMAGE
+config_overrides_file=$CONFIG_OVERRIDES_FILE
 
 if [ "$command" = "create" ] || [ "$command" = "destroy" ] || [ "$command" = "start" ] || [ "$command" = "stop" ] ||
     [ "$command" = "logs" ] || [ "$command" = "sync" ] ; then
@@ -130,6 +131,16 @@ function sync_contract_bundle {
         rm -rf $contract_dir/ledger_fs/*  $contract_dir/contract_fs/*
         mkdir -p $contract_dir/contract_fs/seed
         cp -r $bundle_mount $contract_dir/contract_fs/seed/state
+
+        # Merge contract config overrides.
+        local cfg_file=$contract_dir/cfg/hp.cfg
+        local override_file=$contract_dir/contract_fs/seed/state/$config_overrides_file
+        if [ -f $override_file ] ; then
+            echo "Applying hp.cfg overrides"
+            jq -s '.[0] * .[1]' $cfg_file $override_file > $cfg_file.merged
+            mv $cfg_file.merged $cfg_file
+            rm $override_file
+        fi
     done
 }
 
