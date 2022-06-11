@@ -1,16 +1,14 @@
 #!/bin/bash
-global_prefix="hpdevkit"
-imgname="evernodedev/hotpocket:latest-ubt.20.04-njs.16"
-volmount="/devkitvol"
-
 command=$1
-cluster="${HP_CLUSTER:-default}"
-volume="${global_prefix}_${cluster}_vol"
-network="${global_prefix}_${cluster}_net"
-container_prefix="${global_prefix}_${cluster}_con"
-bundle_mount="${volmount}/contract_bundle"
 
-echo "Hot Pocket development toolkit"
+cluster=$CLUSTER
+cluster_size=$CLUSTER_SIZE
+volume=$VOLUME
+network=$NETWORK
+container_prefix=$CONTAINER_PREFIX
+volume_mount=$VOLUME_MOUNT
+bundle_mount=$BUNDLE_MOUNT
+hotpocket_image=$HOTPOCKET_IMAGE
 
 if [ "$command" = "create" ] || [ "$command" = "destroy" ] || [ "$command" = "start" ] || [ "$command" = "stop" ] ||
     [ "$command" = "logs" ] || [ "$command" = "sync" ] ; then
@@ -30,7 +28,7 @@ function validate_node_num_arg {
 }
 
 function contract_dir_mount_path {
-    echo "$volmount/node$1"
+    echo "$volume_mount/node$1"
 }
 
 function exists {
@@ -69,17 +67,19 @@ function get_container_count {
 
 function create_cluster {
     ensure_cluser_not_exists
+
+    echo "Creating '$cluster' cluster of size $1"
     docker volume create $volume
     docker network create $network
 
     for ((i=1; i<=$1; i++));
     do
         # Create contract instance directory.
-        docker run --rm --mount type=volume,src=$volume,dst=$volmount --rm $imgname new $volmount/node$i
+        docker run --rm --mount type=volume,src=$volume,dst=$volume_mount --rm $hotpocket_image new $volume_mount/node$i
 
         # Create container for hot pocket instance.
         local container_name="${container_prefix}_$i"
-        docker container create --name $container_name --privileged --mount type=volume,src=$volume,dst=$volmount $imgname run $(contract_dir_mount_path $i)
+        docker container create --name $container_name --privileged --mount type=volume,src=$volume,dst=$volume_mount $hotpocket_image run $(contract_dir_mount_path $i)
     done
 }
 
@@ -133,8 +133,8 @@ function sync_contract_bundle {
 }
 
 if [ $command = "create" ]; then
-    ! validate_node_num_arg $2 && echo "Usage: create <node count>" && exit 1
-    create_cluster $2
+    ! validate_node_num_arg $cluster_size && echo "Invalid cluster size." && exit 1
+    create_cluster $cluster_size
 elif [ $command = "destroy" ]; then
     destroy_cluster
 elif [ $command = "start" ]; then
