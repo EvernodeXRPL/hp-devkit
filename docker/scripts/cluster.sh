@@ -11,7 +11,8 @@ bundle_mount=$BUNDLE_MOUNT
 hotpocket_image=$HOTPOCKET_IMAGE
 config_overrides_file=$CONFIG_OVERRIDES_FILE
 
-if [ "$command" = "create" ] || [ "$command" = "destroy" ] || [ "$command" = "start" ] || [ "$command" = "stop" ] ||
+if [ "$command" = "create" ] || [ "$command" = "bindmesh" ] || [ "$command" = "destroy" ] || \
+    [ "$command" = "start" ] || [ "$command" = "stop" ] || \
     [ "$command" = "logs" ] || [ "$command" = "sync" ] ; then
     echo "sub-command: $command"
 else
@@ -71,9 +72,14 @@ function create_instance {
     # Create contract instance directory.
     docker run --rm --mount type=volume,src=$volume,dst=$volume_mount --rm $hotpocket_image new $volume_mount/node$node
 
+    let peer_port=22860+$node
+    let user_port=8080+$node
+
     # Create container for hot pocket instance.
     local container_name="${container_prefix}_$node"
-    docker container create --name $container_name --privileged --mount type=volume,src=$volume,dst=$volume_mount $hotpocket_image run $(contract_dir_mount_path $node)
+    docker container create --name $container_name --privileged \
+        -p $peer_port:$peer_port -p $user_port:$user_port --network $network --network-alias node$node \
+        --mount type=volume,src=$volume,dst=$volume_mount $hotpocket_image run $(contract_dir_mount_path $node)
 }
 
 function change_instance_status {
@@ -81,6 +87,72 @@ function change_instance_status {
     local node=$2
     local container_name="${container_prefix}_$node"
     docker $action $container_name
+}
+
+
+# Function to generate JSON array string while skiping a given index.
+function joinarr {
+    local arrname=$1[@]
+    local arr=("${!arrname}")
+    local ncount=$2
+    local skip=$3
+
+    let prevlast=$ncount-2
+    # Resetting prevlast if nothing is given to skip.
+    [ $skip -lt 0 ] && let prevlast=prevlast+1
+
+    local j=0
+    local str="["
+    for (( i=0; i<$ncount; i++ ))
+    do
+        if [ "$i" != "$skip" ]
+        then
+            str="$str\"${arr[i]}\""
+            [ $j -lt $prevlast ] && str="$str,"
+            let j=j+1
+        fi
+    done
+    str="$str]"
+    echo $str
+}
+
+# Update all instances hot pocket configs so they connect to each other as a cluster.
+function bind_mesh {
+    local instance_count=$(get_container_count)
+    
+    # Collect pubkeys and peers of all nodes.
+    local all_pubkeys
+    local all_peers
+    local contract_id
+    for ((i=1; i<=$instance_count; i++));
+    do  
+        local contract_dir=$(contract_dir_mount_path $i)
+        local cfg_file=$contract_dir/cfg/hp.cfg
+
+        # Use first instance contract id for all instances.
+        [ $i -eq 1 ] && contract_id=$(jq ".contract.id" $cfg_file)
+
+        # Assign user and peer ports in incrementing order.
+        let peer_port=22860+$i
+        let user_port=8080+$i
+
+        jq ".contract.id=$contract_id | .mesh.port=$peer_port | .user.port=$user_port" $cfg_file > $cfg_file.tmp \
+            && mv $cfg_file.tmp $cfg_file
+
+        all_pubkeys[i]=$(jq --raw-output ".node.public_key" $cfg_file)
+        all_peers[i]="node$i:${peer_port}"
+    done
+
+    # Update unl and peer list for all instances.
+    local unl=$(joinarr all_pubkeys $instance_count -1)
+    for ((i=0; i<$instance_count; i++));
+    do
+        let node=$i+1
+        local contract_dir=$(contract_dir_mount_path $node)
+        local cfg_file=$contract_dir/cfg/hp.cfg
+        local peers=$(joinarr all_peers $instance_count $i)
+        jq ".contract.unl=$unl | .mesh.known_peers=$peers" $cfg_file > $cfg_file.tmp && mv $cfg_file.tmp $cfg_file
+    done
 }
 
 function create_cluster {
@@ -168,6 +240,8 @@ function sync_contract_bundle {
 if [ $command = "create" ]; then
     ! validate_node_num_arg $cluster_size && echo "Invalid cluster size." && exit 1
     create_cluster $cluster_size
+elif [ $command = "bindmesh" ]; then
+    bind_mesh
 elif [ $command = "destroy" ]; then
     destroy_cluster
 elif [ $command = "start" ]; then

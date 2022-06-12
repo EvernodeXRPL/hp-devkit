@@ -59,6 +59,9 @@ function InitializeDeploymentCluster() {
 
         # Spin up management container.
         DevKitContainer -Mode "run" -Name $DeploymentContainerName -Detached -MountSock -MountVolume
+
+        # Bind the instance mesh network config together.
+        ExecuteInDeploymentContainer -Cmd "cluster bindmesh"
     }
 }
 
@@ -95,6 +98,7 @@ Function Deploy([string]$Path) {
 Write-Host "Hot Pocket devkit launcher"
 
 $Command = $args[0]
+$CommandError = "Invalid command. Expected: deploy | clean | start | stop | logs"
 if ($Command) {
 
     Write-Host "command: $($Command) (cluster: $($Cluster))"
@@ -115,9 +119,9 @@ if ($Command) {
         DevKitContainer -Mode "run" -AutoRemove -MountSock -Cmd "cluster $($args)"
     }
     else {
-        Write-Host "Invalid command. Expected: deploy | clean | logs"
+        Write-Host $CommandError
     }
 }
 else {
-    Write-Host "Please specify command."
+    Write-Host $CommandError
 }
