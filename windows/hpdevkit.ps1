@@ -1,17 +1,18 @@
 $GlobalPrefix = "hpdevkit"
-$DevKitImage = "hpdevkit"
-$VolumeMount = "/devkitvol"
-$HotPocketImage = "evernodedev/hotpocket:latest-ubt.20.04-njs.16"
 
 $Cluster = if ($env:HP_CLUSTER) { $env:HP_CLUSTER } else { "default" };
 $ClusterSize = if ($env:HP_CLUSTER_SIZE) { $env:HP_CLUSTER_SIZE } else { 1 };
 $DefaultNode = if ($env:HP_DEFAULT_NODE) { $env:HP_DEFAULT_NODE } else { 1 };
+$DevKitImage = if ($env:HP_DEVKIT_IMAGE) { $env:HP_DEVKIT_IMAGE } else { "hpdevkit" };
+$InstanceImage = if ($env:HP_INSTANCE_IMAGE) { $env:HP_INSTANCE_IMAGE } else { "evernodedev/hotpocket:latest-ubt.20.04-njs.16" };
+
+$VolumeMount = "/$($GlobalPrefix)_vol"
 $Volume = "$($GlobalPrefix)_$($Cluster)_vol"
 $Network = "$($GlobalPrefix)_$($Cluster)_net"
 $ContainerPrefix = "$($GlobalPrefix)_$($Cluster)_node"
 $BundleMount = "$($VolumeMount)/contract_bundle"
-$DeploymentContainerName = "$($GlobalPrefix)_$($Cluster)_deploymanager"
-$ConfigOverridesFile = "$($GlobalPrefix)_overrides.cfg"
+$DeploymentContainerName = "$($GlobalPrefix)_$($Cluster)_deploymgr"
+$ConfigOverridesFile = "hp.cfg.override"
 
 function DevKitContainer([string]$Mode, [string]$Name, [switch]$Detached, [switch]$AutoRemove, [switch]$MountSock, [switch]$MountVolume, [string]$Cmd) {
 
@@ -26,15 +27,17 @@ function DevKitContainer([string]$Mode, [string]$Name, [switch]$Detached, [switc
         $Command += " --rm"
     }
     if ($MountSock) {
+        # We mount the host docker socket into the container so we can use it to issue commands to the docker host.
+        # We use this ability to spin up other containers (Hot Pocket nodes) on the host.
         $Command += " --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock"
     }
     if ($MountVolume) {
         $Command += " --mount type=volume,src=$($Volume),dst=$($VolumeMount)"
     }
 
-    # Env variables.
+    # Pass environment variables used by our scripts.
     $Command += " -e CLUSTER=$($Cluster) -e CLUSTER_SIZE=$($ClusterSize) -e DEFAULT_NODE=$($DefaultNode) -e VOLUME=$($Volume) -e NETWORK=$($Network)"
-    $Command += " -e CONTAINER_PREFIX=$($ContainerPrefix) -e VOLUME_MOUNT=$($VolumeMount) -e BUNDLE_MOUNT=$($BundleMount) -e HOTPOCKET_IMAGE=$($HotPocketImage)"
+    $Command += " -e CONTAINER_PREFIX=$($ContainerPrefix) -e VOLUME_MOUNT=$($VolumeMount) -e BUNDLE_MOUNT=$($BundleMount) -e HOTPOCKET_IMAGE=$($InstanceImage)"
     $Command += " -e CONFIG_OVERRIDES_FILE=$($ConfigOverridesFile)"
 
     $Command += " $($DevKitImage)"
