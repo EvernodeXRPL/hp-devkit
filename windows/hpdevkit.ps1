@@ -12,9 +12,12 @@ $Network = "$($GlobalPrefix)_$($Cluster)_net"
 $ContainerPrefix = "$($GlobalPrefix)_$($Cluster)_node"
 $BundleMount = "$($VolumeMount)/contract_bundle"
 $DeploymentContainerName = "$($GlobalPrefix)_$($Cluster)_deploymgr"
+$CodegenContainerName = "$($GlobalPrefix)_codegen"
 $ConfigOverridesFile = "hp.cfg.override"
+$CodegenOutputDir = "/codegen-output"
+$DefaultCodegenProject = "hpdevkitproject"
 
-function DevKitContainer([string]$Mode, [string]$Name, [switch]$Detached, [switch]$AutoRemove, [switch]$MountSock, [switch]$MountVolume, [string]$Cmd) {
+function DevKitContainer([string]$Mode, [string]$Name, [switch]$Detached, [switch]$AutoRemove, [switch]$MountSock, [switch]$MountVolume, [string]$EntryPoint, [string]$Cmd) {
 
     $Command = "docker $($Mode) -it"
     if ($Name) {
@@ -35,17 +38,32 @@ function DevKitContainer([string]$Mode, [string]$Name, [switch]$Detached, [switc
         $Command += " --mount type=volume,src=$($Volume),dst=$($VolumeMount)"
     }
 
+    if ($EntryPoint) {
+        $Command += " --entrypoint $($EntryPoint)"
+    }
+    else {
+        $Command += " --entrypoint /bin/bash"
+    }
+
     # Pass environment variables used by our scripts.
     $Command += " -e CLUSTER=$($Cluster) -e CLUSTER_SIZE=$($ClusterSize) -e DEFAULT_NODE=$($DefaultNode) -e VOLUME=$($Volume) -e NETWORK=$($Network)"
     $Command += " -e CONTAINER_PREFIX=$($ContainerPrefix) -e VOLUME_MOUNT=$($VolumeMount) -e BUNDLE_MOUNT=$($BundleMount) -e HOTPOCKET_IMAGE=$($InstanceImage)"
-    $Command += " -e CONFIG_OVERRIDES_FILE=$($ConfigOverridesFile)"
+    $Command += " -e CONFIG_OVERRIDES_FILE=$($ConfigOverridesFile) -e CODEGEN_OUTPUT=$($CodegenOutputDir)"
 
     $Command += " $($DevKitImage)"
     if ($Cmd) {
-        $Command += " /bin/bash -c '$($Cmd)'"
+        if ($EntryPoint) {
+            $Command += " $($Cmd)"
+        }
+        else {
+            $Command += " -c '$($Cmd)'"
+        }
     }
 
-    Invoke-Expression $Command
+    # This makes Invoke-Expression return true/false based on command exit code.
+    $Command += ';$?'
+
+    return Invoke-Expression $Command
 }
 
 function ExecuteInDeploymentContainer([string]$Cmd) {
@@ -98,31 +116,44 @@ Function Deploy([string]$Path) {
     }
 }
 
-Write-Host "Hot Pocket devkit launcher"
 
 $Command = $args[0]
-$CommandError = "Invalid command. Expected: deploy | clean | start | stop | logs"
+$CommandError = "Invalid command. Expected: deploy | clean | start | stop | logs | gen"
 if ($Command) {
 
-    Write-Host "command: $($Command) (cluster: $($Cluster))"
-
-    if ($Command -eq "deploy") {
-        $Path = $args[1]
-        if ($Path) {
-            Deploy -Path $Path
+    if ($Command -eq "gen") {
+        Write-Host "Hot Pocket devkit code generator"
+        
+        $ProjName = if ($($args[3])) { $($args[3]).ToLower() } else { "$($DefaultCodegenProject)" }
+        if (Test-Path -Path $ProjName) {
+            "Directory '$($ProjName)' already exists."
         }
-        else {
-            Write-Host "Please specify directory or file path to deploy."
+        if (DevKitContainer -Mode "run" -Name $CodegenContainerName -EntryPoint "codegen" -Cmd "$($args[1]) $($args[2]) $($ProjName)") {
+            docker cp "$($CodegenContainerName):$($CodegenOutputDir)" ./$ProjName
+            docker rm "$($CodegenContainerName)"
         }
-    }
-    elseif ($Command -eq "clean") {
-        TeardownDeploymentCluster
-    }
-    elseif ($Command -eq "logs" -OR $Command -eq "start" -OR $Command -eq "stop") {
-        DevKitContainer -Mode "run" -AutoRemove -MountSock -Cmd "cluster $($args)"
     }
     else {
-        Write-Host $CommandError
+        Write-Host "Hot Pocket devkit launcher"
+        Write-Host "command: $($Command) (cluster: $($Cluster))"
+        if ($Command -eq "deploy") {
+            $Path = $args[1]
+            if ($Path) {
+                Deploy -Path $Path
+            }
+            else {
+                Write-Host "Please specify directory or file path to deploy."
+            }
+        }
+        elseif ($Command -eq "clean") {
+            TeardownDeploymentCluster
+        }
+        elseif ($Command -eq "logs" -OR $Command -eq "start" -OR $Command -eq "stop") {
+            DevKitContainer -Mode "run" -AutoRemove -MountSock -EntryPoint "cluster" -Cmd "$($args)"
+        }
+        else {
+            Write-Host $CommandError
+        }
     }
 }
 else {
