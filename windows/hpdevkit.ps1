@@ -60,10 +60,14 @@ function DevKitContainer([string]$Mode, [string]$Name, [switch]$Detached, [switc
         }
     }
 
-    # This makes Invoke-Expression return true/false based on command exit code.
-    $Command += ';$?'
+    Invoke-Expression $Command 2>&1 | Write-Host
 
-    return Invoke-Expression $Command
+    if ($LASTEXITCODE -eq 0) {
+        return $True
+    }
+    else {
+        return $False
+    }
 }
 
 function ExecuteInDeploymentContainer([string]$Cmd) {
@@ -128,10 +132,12 @@ if ($Command) {
         if (Test-Path -Path $ProjName) {
             "Directory '$($ProjName)' already exists."
         }
-        if (DevKitContainer -Mode "run" -Name $CodegenContainerName -EntryPoint "codegen" -Cmd "$($args[1]) $($args[2]) $($ProjName)") {
+        elseif (DevKitContainer -Mode "run" -Name $CodegenContainerName -EntryPoint "codegen" -Cmd "$($args[1]) $($args[2]) $($ProjName)") {
             docker cp "$($CodegenContainerName):$($CodegenOutputDir)" ./$ProjName
-            docker rm "$($CodegenContainerName)"
+            Write-Host "Directory '$($ProjName)' created."
         }
+
+        docker rm "$($CodegenContainerName)" 2>&1 | Out-Null
     }
     else {
         Write-Host "Hot Pocket devkit launcher"

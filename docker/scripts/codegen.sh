@@ -11,8 +11,8 @@ if [ -z $platform ] || [ -z $apptype ] || [ -z $projname ] || [ -z $templates_di
     echo "Mandatory args missing." && exit 1
 fi
 
-[ ! -d $templates_dir/$platform ] && echo "Invalid platform specified." && exit 1
-[ ! -d $templates_dir/$platform/$apptype ] && echo "Invalid application type specified." && exit 1
+[ ! -d $templates_dir/$platform ] && echo "Invalid platform '$platform' specified." && exit 1
+[ ! -d $templates_dir/$platform/$apptype ] && echo "Invalid application type '$apptype' specified." && exit 1
 
 mkdir -p $output_dir && rm -rf $output_dir/*
 cp -r $templates_dir/$platform/$apptype/* $output_dir
