@@ -17,7 +17,7 @@ $ConfigOverridesFile = "hp.cfg.override"
 $CodegenOutputDir = "/codegen-output"
 $DefaultCodegenProject = "hpdevkitproject"
 
-function DevKitContainer([string]$Mode, [string]$Name, [switch]$Detached, [switch]$AutoRemove, [switch]$MountSock, [switch]$MountVolume, [string]$EntryPoint, [string]$Cmd) {
+function DevKitContainer([string]$Mode, [string]$Name, [switch]$Detached, [switch]$AutoRemove, [switch]$MountSock, [switch]$MountVolume, [string]$EntryPoint, [string]$Cmd, [switch]$Status) {
 
     $Command = "docker $($Mode) -it"
     if ($Name) {
@@ -62,11 +62,13 @@ function DevKitContainer([string]$Mode, [string]$Name, [switch]$Detached, [switc
 
     Invoke-Expression $Command 2>&1 | Write-Host
 
-    if ($LASTEXITCODE -eq 0) {
-        return $True
-    }
-    else {
-        return $False
+    if ($Status) {
+        if ($LASTEXITCODE -eq 0) {
+            return $True
+        }
+        else {
+            return $False
+        }
     }
 }
 
@@ -98,26 +100,46 @@ function TeardownDeploymentCluster() {
 
 Function Deploy([string]$Path) {
 
-    InitializeDeploymentCluster
+    if ($Path) {
+        
+        InitializeDeploymentCluster
 
-    # If copying a directory, delete target bundle directory. If not create empty target bundle directory to copy a file.
-    $PrepareBundleDir = ""
-    if ((Get-Item $Path) -is [System.IO.DirectoryInfo]) {
-        $PrepareBundleDir = "rm -rf $($BundleMount)"
+        # If copying a directory, delete target bundle directory. If not create empty target bundle directory to copy a file.
+        $PrepareBundleDir = ""
+        if ((Get-Item $Path) -is [System.IO.DirectoryInfo]) {
+            $PrepareBundleDir = "rm -rf $($BundleMount)"
+        }
+        else {
+            $PrepareBundleDir = "mkdir -p $($BundleMount) && rm -rf $($BundleMount)/* $($BundleMount)/.??*"
+        }
+        ExecuteInDeploymentContainer -Cmd $PrepareBundleDir
+        docker cp $Path "$($DeploymentContainerName):$($BundleMount)"
+
+        # Sync contract bundle to all instance directories in the cluster.
+        ExecuteInDeploymentContainer -Cmd "cluster stop ; cluster sync ; cluster start"
+
+        if ($DefaultNode -gt 0) {
+            Write-Host "Streaming logs of node $($DefaultNode):"
+            ExecuteInDeploymentContainer -Cmd "cluster logs $($DefaultNode)"
+        }
     }
     else {
-        $PrepareBundleDir = "mkdir -p $($BundleMount) && rm -rf $($BundleMount)/* $($BundleMount)/.??*"
+        Write-Host "Please specify directory or file path to deploy."
     }
-    ExecuteInDeploymentContainer -Cmd $PrepareBundleDir
-    docker cp $Path "$($DeploymentContainerName):$($BundleMount)"
+}
 
-    # Sync contract bundle to all instance directories in the cluster.
-    ExecuteInDeploymentContainer -Cmd "cluster stop ; cluster sync ; cluster start"
-
-    if ($DefaultNode -gt 0) {
-        Write-Host "Streaming logs of node $($DefaultNode):"
-        ExecuteInDeploymentContainer -Cmd "cluster logs $($DefaultNode)"
+Function CodeGenerator() {
+    $ProjName = $args[2]
+    if (Test-Path -Path $ProjName) {
+        "Directory '$($ProjName)' already exists."
+        return
     }
+
+    if (DevKitContainer -Status -Mode "run" -Name $CodegenContainerName -EntryPoint "codegen" -Cmd "$($args[0]) $($args[1]) $($ProjName)") {
+        docker cp "$($CodegenContainerName):$($CodegenOutputDir)" ./$ProjName
+        Write-Host "Project '$($ProjName)' created."
+    }
+    docker rm "$($CodegenContainerName)" 2>&1 | Out-Null
 }
 
 
@@ -127,29 +149,13 @@ if ($Command) {
 
     if ($Command -eq "gen") {
         Write-Host "Hot Pocket devkit code generator"
-        
-        $ProjName = if ($($args[3])) { $($args[3]).ToLower() } else { "$($DefaultCodegenProject)" }
-        if (Test-Path -Path $ProjName) {
-            "Directory '$($ProjName)' already exists."
-        }
-        elseif (DevKitContainer -Mode "run" -Name $CodegenContainerName -EntryPoint "codegen" -Cmd "$($args[1]) $($args[2]) $($ProjName)") {
-            docker cp "$($CodegenContainerName):$($CodegenOutputDir)" ./$ProjName
-            Write-Host "Directory '$($ProjName)' created."
-        }
-
-        docker rm "$($CodegenContainerName)" 2>&1 | Out-Null
+        CodeGenerator $args[1] $args[2] $args[3]
     }
     else {
         Write-Host "Hot Pocket devkit launcher"
         Write-Host "command: $($Command) (cluster: $($Cluster))"
         if ($Command -eq "deploy") {
-            $Path = $args[1]
-            if ($Path) {
-                Deploy -Path $Path
-            }
-            else {
-                Write-Host "Please specify directory or file path to deploy."
-            }
+            Deploy -Path $args[1]
         }
         elseif ($Command -eq "clean") {
             TeardownDeploymentCluster

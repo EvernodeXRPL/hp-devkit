@@ -2,7 +2,7 @@
     "name": "#projname#",
     "version": "1.0.0",
     "scripts": {
-        "build": "ncc build contract.js -o dist"
+        "build": "npx ncc build #projname#.js -o dist"
     },
     "dependencies": {
         "hotpocket-nodejs-contract": "0.5.3",
