@@ -64,6 +64,12 @@ Example `hp.cfg.override` for a nodejs application:
 }
 ```
 
+#### Code generator
+```
+# Generate nodejs starter project
+.\hpdevkit.ps1 gen nodejs starter <project name>
+```
+
 ### Generate executable
 ```powershell
 cd windows
