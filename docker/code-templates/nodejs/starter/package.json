@@ -1,8 +1,9 @@
 {
-    "name": "#projname#",
+    "name": "_projname_",
     "version": "1.0.0",
     "scripts": {
-        "build": "npx ncc build #projname#.js -o dist"
+        "build": "npx ncc build src/contract.js -o dist",
+        "build:prod": "npx ncc build src/contract.js --minify -o dist"
     },
     "dependencies": {
         "hotpocket-nodejs-contract": "0.5.3",

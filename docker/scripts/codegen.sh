@@ -4,7 +4,7 @@ apptype=$2
 projname=$3
 
 templates_dir="/code-templates"
-placeholder="projname"
+placeholder="_projname_"
 output_dir=$CODEGEN_OUTPUT
 usage="Usage: <platform> <app type> <project name>"
 
@@ -29,12 +29,12 @@ cp -r $templates_dir/$platform/$apptype/* $output_dir
 pushd $output_dir > /dev/null
 
 # Replace placeholder in all file contents.
-find -type f -exec sed -i "s/#${placeholder}#/${projname}/" {} \;
+find -type f -exec sed -i "s/${placeholder}/${projname}/g" {} \;
 
 # Rename files with placeholder name.
 for f in $(find -type f -name "*${placeholder}*")
 do
-    mv "$f" "$(echo "$f" | sed s/${placeholder}/${projname}/)"
+    mv "$f" "$(echo "$f" | sed s/${placeholder}/${projname}/g)"
 done
 
 popd > /dev/null
