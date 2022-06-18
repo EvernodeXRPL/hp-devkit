@@ -1,5 +1,5 @@
 const HotPocket = require('hotpocket-nodejs-contract');
-const { _projname_ } = require('_projname_');
+const { _projname_ } = require('./_projname_');
 
 // Hot Pocket smart contract is defined as a function which takes the Hot Pocket ExecutionContext as an argument.
 // This function gets invoked every consensus round and whenever a user sends a out-of-concensus read-request.

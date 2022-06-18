@@ -3,7 +3,8 @@
     "version": "1.0.0",
     "scripts": {
         "build": "npx ncc build src/contract.js -o dist",
-        "build:prod": "npx ncc build src/contract.js --minify -o dist"
+        "build:prod": "npx ncc build src/contract.js --minify -o dist",
+        "start": "npm run build && hpdevkit deploy dist"
     },
     "dependencies": {
         "hotpocket-nodejs-contract": "0.5.3",
