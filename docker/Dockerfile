@@ -1,6 +1,7 @@
 # This image contains scripts for creating Hot Pocket contract clusters
 # on the developer machine for local development testing.
-# docker build -t hpdevkit .
+# docker build -t evernodedev/hpdevkit .
+# docker push evernodedev/hpdevkit
 
 FROM ubuntu:focal as builder
 RUN apt-get update && apt-get install -y wget

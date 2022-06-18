@@ -12,12 +12,17 @@ Docker image containing cross-platform cluster management scripts.
 ### Local build
 ```
 cd docker
-docker build -t hpdevkit .
+docker build -t evernodedev/hpdevkit .
+```
+
+### Push to Docker hub
+```
+docker push evernodedev/hpdevkit
 ```
 
 ### Run
 ```
-docker run -it --rm --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock hpdevkit cluster create 2
+docker run -it --rm --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock evernodedev/hpdevkit cluster create 2
 ```
 
 ## Windows build
@@ -83,5 +88,5 @@ The executable can be distributed to be run as a CLI tool on developer machine.
 | HP_CLUSTER | Name of the cluster. Can be used to spin up different clusters for different applications. | `default` |
 | HP_CLUSTER_SIZE | Number of nodes in the cluster. Applied with 'deploy' command. | `1` |
 | HP_DEFAULT_NODE | The node the 'deploy' command uses to display logs. | `1` |
-| HP_DEVKIT_IMAGE | Docker image to be used for devkit cluster management. | `hpdevkit` |
+| HP_DEVKIT_IMAGE | Docker image to be used for devkit cluster management. | `evernodedev/hpdevkit` |
 | HP_INSTANCE_IMAGE | Docker image to be used for Hot Pocket instances. | `evernodedev/hotpocket:latest-ubt.20.04-njs.16` |

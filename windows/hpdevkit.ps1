@@ -1,9 +1,10 @@
 $GlobalPrefix = "hpdevkit"
+$Version = "0.1.0"
 
 $Cluster = if ($env:HP_CLUSTER) { $env:HP_CLUSTER } else { "default" };
 $ClusterSize = if ($env:HP_CLUSTER_SIZE) { $env:HP_CLUSTER_SIZE } else { 1 };
 $DefaultNode = if ($env:HP_DEFAULT_NODE) { $env:HP_DEFAULT_NODE } else { 1 };
-$DevKitImage = if ($env:HP_DEVKIT_IMAGE) { $env:HP_DEVKIT_IMAGE } else { "hpdevkit" };
+$DevKitImage = if ($env:HP_DEVKIT_IMAGE) { $env:HP_DEVKIT_IMAGE } else { "evernodedev/hpdevkit" };
 $InstanceImage = if ($env:HP_INSTANCE_IMAGE) { $env:HP_INSTANCE_IMAGE } else { "evernodedev/hotpocket:latest-ubt.20.04-njs.16" };
 
 $VolumeMount = "/$($GlobalPrefix)_vol"
@@ -15,7 +16,6 @@ $DeploymentContainerName = "$($GlobalPrefix)_$($Cluster)_deploymgr"
 $CodegenContainerName = "$($GlobalPrefix)_codegen"
 $ConfigOverridesFile = "hp.cfg.override"
 $CodegenOutputDir = "/codegen-output"
-$DefaultCodegenProject = "hpdevkitproject"
 
 function DevKitContainer([string]$Mode, [string]$Name, [switch]$Detached, [switch]$AutoRemove, [switch]$MountSock, [switch]$MountVolume, [string]$EntryPoint, [string]$Cmd, [switch]$Status) {
 
@@ -142,17 +142,18 @@ Function CodeGenerator() {
     docker rm "$($CodegenContainerName)" 2>&1 | Out-Null
 }
 
+Write-Host "Hot Pocket devkit launcher ($($Version))"
 
 $Command = $args[0]
 $CommandError = "Invalid command. Expected: deploy | clean | start | stop | logs | gen"
+
 if ($Command) {
 
     if ($Command -eq "gen") {
-        Write-Host "Hot Pocket devkit code generator"
+        Write-Host "Code generator"
         CodeGenerator $args[1] $args[2] $args[3]
     }
     else {
-        Write-Host "Hot Pocket devkit launcher"
         Write-Host "command: $($Command) (cluster: $($Cluster))"
         if ($Command -eq "deploy") {
             Deploy -Path $args[1]
