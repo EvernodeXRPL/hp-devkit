@@ -1,7 +1,7 @@
 $GlobalPrefix = "hpdevkit"
 $Version = "0.1.0"
 
-$Cluster = if ($env:HP_CLUSTER) { $env:HP_CLUSTER } else { "default" };
+$Cluster = "default"
 $ClusterSize = if ($env:HP_CLUSTER_SIZE) { $env:HP_CLUSTER_SIZE } else { 1 };
 $DefaultNode = if ($env:HP_DEFAULT_NODE) { $env:HP_DEFAULT_NODE } else { 1 };
 $DevKitImage = if ($env:HP_DEVKIT_IMAGE) { $env:HP_DEVKIT_IMAGE } else { "evernodedev/hpdevkit" };

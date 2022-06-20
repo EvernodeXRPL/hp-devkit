@@ -3,6 +3,11 @@ Developer toolkit for Hot Pocket smart contract development. This toolkit makes 
 
 We use Docker containers to run Hot Pocket and smart contracts in a Linux environment. We also use Docker containers to distribute developer tools so developers can use the tools on any platform as long as they install Docker.
 
+<img width="829" alt="image" src="https://user-images.githubusercontent.com/33562092/174513691-4700f356-09c5-47f9-ad5c-550abaefc1b1.png">
+
+## Public documentation
+Available [here](https://github.com/HotPocketDev/evernode-sdk/tree/main/hpdevkit)
+
 ## Prerequisites
 - [Docker](https://docs.docker.com/engine/install/)
 
@@ -71,8 +76,8 @@ Example `hp.cfg.override` for a nodejs application:
 
 #### Code generator
 ```
-# Generate nodejs starter project
-.\hpdevkit.ps1 gen nodejs starter <project name>
+# Generate nodejs starter contract project
+.\hpdevkit.ps1 gen nodejs starter-contract <project name>
 ```
 
 ### Generate executable
@@ -85,7 +90,6 @@ The executable can be distributed to be run as a CLI tool on developer machine.
 ## Environment variables
 | Name | Description | Default value |
 | --- | --- | --- |
-| HP_CLUSTER | Name of the cluster. Can be used to spin up different clusters for different applications. | `default` |
 | HP_CLUSTER_SIZE | Number of nodes in the cluster. Applied with 'deploy' command. | `1` |
 | HP_DEFAULT_NODE | The node the 'deploy' command uses to display logs. | `1` |
 | HP_DEVKIT_IMAGE | Docker image to be used for devkit cluster management. | `evernodedev/hpdevkit` |

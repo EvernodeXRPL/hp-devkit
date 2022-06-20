@@ -78,7 +78,7 @@ function create_instance {
     # Create container for hot pocket instance.
     local container_name="${container_prefix}_$node"
     docker container create --name $container_name --privileged \
-        -p $peer_port:$peer_port -p $user_port:$user_port --network $network --network-alias node$node \
+        -p $user_port:$user_port --network $network --network-alias node$node \
         --mount type=volume,src=$volume,dst=$volume_mount $hotpocket_image run $(contract_dir_mount_path $node)
 }
 
