@@ -10,9 +10,9 @@ async function contract(ctx) {
     const app = new _projname_();
 
     // Wire-up output emissions from the application before we pass user inputs to it.
-    app.sendOutput = async (userPubKey, output) => {
+    app.sendOutput = async (userPublicKey, output) => {
         // In Hot Pocket, each user is represented by their Ed25519 public key.
-        const user = ctx.users.find(userPubKey);
+        const user = ctx.users.find(userPublicKey);
         await user.send(output)
     }
     
@@ -40,7 +40,7 @@ async function contract(ctx) {
             const message = JSON.parse(buf);
 
             // Pass the JSON message to our application logic component.
-            await app.handleRequest(userPubKey, message, isReadOnly);
+            await app.handleRequest(userPublicKey, message, isReadOnly);
         }
     }
 }

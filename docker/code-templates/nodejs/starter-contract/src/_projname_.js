@@ -7,7 +7,7 @@ const dataFile = 'datafile.txt'
 export class _projname_ {
     sendOutput; // This function must be wired up by the caller.
 
-    async handleRequest(userPubKey, message, isReadOnly) {
+    async handleRequest(userPublicKey, message, isReadOnly) {
 
         // This sample application defines two simple messages. 'get' and 'set'.
         // It's up to the application to decide the structure and contents of messages.
@@ -16,7 +16,7 @@ export class _projname_ {
 
             // Retrieved previously saved data and return to the user.
             const data = await this.getData();
-            await this.sendOutput(userPubKey, {
+            await this.sendOutput(userPublicKey, {
                 type: 'data_result',
                 data: data
             })
@@ -28,7 +28,7 @@ export class _projname_ {
                 await this.setData(message.data);
             }
             else {
-                await this.sendOutput(userPubKey, {
+                await this.sendOutput(userPublicKey, {
                     type: 'error',
                     error: 'Set data not supported in readonly mode'
                 })
@@ -36,7 +36,7 @@ export class _projname_ {
 
         }
         else {
-            await this.sendOutput(userPubKey, {
+            await this.sendOutput(userPublicKey, {
                 type: 'error',
                 error: 'Unknown message type'
             })
