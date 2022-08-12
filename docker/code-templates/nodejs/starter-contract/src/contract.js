@@ -1,21 +1,21 @@
 const HotPocket = require('hotpocket-nodejs-contract');
 const { _projname_ } = require('./_projname_');
 
-// Hot Pocket smart contract is defined as a function which takes the Hot Pocket ExecutionContext as an argument.
+// HotPocket smart contract is defined as a function which takes the HotPocket contract context as an argument.
 // This function gets invoked every consensus round and whenever a user sends a out-of-concensus read-request.
 async function contract(ctx) {
 
     // Create our application logic component.
-    // This pattern allows us to test the application logic independently of Hot Pocket.
+    // This pattern allows us to test the application logic independently of HotPocket.
     const app = new _projname_();
 
     // Wire-up output emissions from the application before we pass user inputs to it.
     app.sendOutput = async (userPublicKey, output) => {
-        // In Hot Pocket, each user is represented by their Ed25519 public key.
+        // In HotPocket, each user is represented by their Ed25519 public key.
         const user = ctx.users.find(userPublicKey);
         await user.send(output)
     }
-    
+
     // In 'readonly' mode, nothing our contract does will get persisted on the ledger. The benefit is
     // readonly messages gets processed much faster due to not being subjected to consensus.
     // We should only use readonly mode for returning/replying data for the requesting user.

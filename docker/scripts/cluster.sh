@@ -75,7 +75,7 @@ function create_instance {
     let peer_port=22860+$node
     let user_port=8080+$node
 
-    # Create container for hot pocket instance.
+    # Create container for hotpocket instance.
     local container_name="${container_prefix}_$node"
     docker container create --name $container_name --privileged \
         -p $user_port:$user_port --network $network --network-alias node$node \
@@ -116,7 +116,7 @@ function joinarr {
     echo $str
 }
 
-# Update all instances hot pocket configs so they connect to each other as a cluster.
+# Update all instances hotpocket configs so they connect to each other as a cluster.
 function bind_mesh {
     local instance_count=$(get_container_count)
     

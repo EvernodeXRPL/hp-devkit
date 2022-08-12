@@ -1,7 +1,7 @@
-# Hot Pocket developer toolkit
-Developer toolkit for Hot Pocket smart contract development. This toolkit makes use of Docker to provide a cross-platform development tools for developers. Using the toolkit, developers can spin-up local Hot Pocket clusters on their developer machines and test Hot Pocket smart contracts.
+# HotPocket developer toolkit
+Developer toolkit for HotPocket smart contract development. This toolkit makes use of Docker to provide a cross-platform development tools for developers. Using the toolkit, developers can spin-up local HotPocket clusters on their developer machines and test HotPocket smart contracts.
 
-We use Docker containers to run Hot Pocket and smart contracts in a Linux environment. We also use Docker containers to distribute developer tools so developers can use the tools on any platform as long as they install Docker.
+We use Docker containers to run HotPocket and smart contracts in a Linux environment. We also use Docker containers to distribute developer tools so developers can use the tools on any platform as long as they install Docker.
 
 <img width="829" alt="image" src="https://user-images.githubusercontent.com/33562092/174513691-4700f356-09c5-47f9-ad5c-550abaefc1b1.png">
 
@@ -93,4 +93,4 @@ The executable can be distributed to be run as a CLI tool on developer machine.
 | HP_CLUSTER_SIZE | Number of nodes in the cluster. Applied with 'deploy' command. | `1` |
 | HP_DEFAULT_NODE | The node the 'deploy' command uses to display logs. | `1` |
 | HP_DEVKIT_IMAGE | Docker image to be used for devkit cluster management. | `evernodedev/hpdevkit` |
-| HP_INSTANCE_IMAGE | Docker image to be used for Hot Pocket instances. | `evernodedev/hotpocket:latest-ubt.20.04-njs.16` |
+| HP_INSTANCE_IMAGE | Docker image to be used for HotPocket instances. | `evernodedev/hotpocket:latest-ubt.20.04-njs.16` |

@@ -44,7 +44,7 @@ export class _projname_ {
     }
 
     async setData(data) {
-        // Hot Pocket subjects data on-disk to consensus.
+        // HotPocket subjects data-on-disk to consensus.
         await fs.writeFile(dataFile, data);
     }
 

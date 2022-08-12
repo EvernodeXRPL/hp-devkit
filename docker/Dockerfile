@@ -1,4 +1,4 @@
-# This image contains scripts for creating Hot Pocket contract clusters
+# This image contains scripts for creating HotPocket contract clusters
 # on the developer machine for local development testing.
 # docker build -t evernodedev/hpdevkit .
 # docker push evernodedev/hpdevkit
@@ -16,7 +16,7 @@ RUN dpkg -x docker.deb docker-extracted
 RUN wget -O jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
 RUN chmod +x jq
 
-# Set permissions for hot pocket devkit scripts.
+# Set permissions for hotpocket devkit scripts.
 COPY scripts /build/scripts
 RUN chmod -R +x /build/scripts/*.sh
 

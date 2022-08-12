@@ -31,7 +31,7 @@ function DevKitContainer([string]$Mode, [string]$Name, [switch]$Detached, [switc
     }
     if ($MountSock) {
         # We mount the host docker socket into the container so we can use it to issue commands to the docker host.
-        # We use this ability to spin up other containers (Hot Pocket nodes) on the host.
+        # We use this ability to spin up other containers (HotPocket nodes) on the host.
         $Command += " --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock"
     }
     if ($MountVolume) {
@@ -142,7 +142,7 @@ Function CodeGenerator() {
     docker rm "$($CodegenContainerName)" 2>&1 | Out-Null
 }
 
-Write-Host "Hot Pocket devkit launcher ($($Version))"
+Write-Host "HotPocket devkit launcher ($($Version))"
 
 $Command = $args[0]
 $CommandError = "Invalid command. Expected: deploy | clean | start | stop | logs | gen"
