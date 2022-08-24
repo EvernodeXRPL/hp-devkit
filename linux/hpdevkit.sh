@@ -79,8 +79,8 @@ function executeInDeploymentContainer() {
 }
 
 function initializeDeploymentCluster() {
-    docker inspect $deploymentContainerName >/dev/null 2>/dev/null
-    if [ "$?" ]; then
+    docker inspect $deploymentContainerName &>/dev/null
+    if [[ $? -gt 0 ]]; then
         echo "Initializing deployment cluster"
 
         # Stop cluster if running. Create cluster if not exists.
@@ -147,7 +147,7 @@ function codeGenerator() {
         echo "Project '$projName' created."
     fi
 
-    docker rm $codegenContainerName >/dev/null 2>/dev/null
+    docker rm $codegenContainerName &>/dev/null
 
 }
 
