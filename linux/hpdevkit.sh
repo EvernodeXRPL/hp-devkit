@@ -157,7 +157,6 @@ funcCommand=$1
 funcCommandError="Invalid command. Expected: deploy | clean | start | stop | logs | gen"
 
 if [ ! -z "$funcCommand" ]; then
-
     if [ "$funcCommand" == "gen" ]; then
         echo "Code generator"
         codeGenerator $2 $3 $4
