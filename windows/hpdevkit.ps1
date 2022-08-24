@@ -183,11 +183,10 @@ Function UpdateHPDevKit() {
 }
 
 if ($ExePath.Contains('hpdevkit.exe')) {
-    # If Command Prompt is used.
     $ExePath = $ExePath.Replace("\hpdevkit.exe", "")
 }
 elseif ($ExePath.Contains('powershell.exe')) {
-    # If Powershell is used.
+    # If Powershell script is used.
     $ExePath = $PSScriptRoot
 }
 
@@ -219,7 +218,14 @@ if ($Command) {
             DevKitContainer -Mode "run" -AutoRemove -MountSock -EntryPoint "cluster" -Cmd "$($args)"
         }
         elseif ($Command -eq "update") {
-            try { UpdateHPDevKit }
+            try { 
+                if (Test-Path -Path "$($ExePath)\hpdevkit.exe") {
+                    UpdateHPDevKit  
+                }
+                else {
+                    Write-Host "No HotPocket devkit executable file was found."         
+                }                    
+            }
             catch { "An error occurred while updating." }
         }
         else {
