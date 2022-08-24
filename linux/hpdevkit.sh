@@ -71,7 +71,7 @@ function devKitContainer() {
     fi
 }
 
-function executeInDeploymentContainer() {
+function executeInContainer() {
     if [ ! -z "$CONTAINERNAME" ]; then
         cmd="docker exec -it $CONTAINERNAME /bin/bash -c '$1'"
         ! eval $cmd && echo "Docker execution failed."
@@ -90,7 +90,7 @@ function initializeDeploymentCluster() {
         NAME="$deploymentContainerName" DETACHED="true" MOUNTSOCK="true" MOUNTVOLUME="true" devKitContainer run
 
         # Bind the instance mesh network config together.
-        CONTAINERNAME="$deploymentContainerName" executeInDeploymentContainer "cluster bindmesh"
+        CONTAINERNAME="$deploymentContainerName" executeInContainer "cluster bindmesh"
     fi
 }
 
@@ -115,15 +115,15 @@ function deploy() {
             prepareBundleDir="mkdir -p $bundleMount && rm -rf $bundleMount/* $bundleMount/.??*"
         fi
 
-        CONTAINERNAME="$deploymentContainerName" executeInDeploymentContainer "$prepareBundleDir"
+        CONTAINERNAME="$deploymentContainerName" executeInContainer "$prepareBundleDir"
         docker cp $path "$deploymentContainerName:$bundleMount"
 
         # Sync contract bundle to all instance directories in the cluster.
-        CONTAINERNAME="$deploymentContainerName" executeInDeploymentContainer "cluster stop ; cluster sync ; cluster start"
+        CONTAINERNAME="$deploymentContainerName" executeInContainer "cluster stop ; cluster sync ; cluster start"
 
         if [ $defaultNode -gt 0 ]; then
             echo "Streaming logs of node $defaultNode:"
-            CONTAINERNAME="$deploymentContainerName" executeInDeploymentContainer "cluster logs $defaultNode"
+            CONTAINERNAME="$deploymentContainerName" executeInContainer "cluster logs $defaultNode"
         fi
 
     else
