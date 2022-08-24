@@ -17,9 +17,9 @@ $CodegenContainerName = "$($GlobalPrefix)_codegen"
 $ConfigOverridesFile = "hp.cfg.override"
 $CodegenOutputDir = "/codegen-output"
 $CloudStorage = "https://stevernode.blob.core.windows.net/evernode-beta"
-$HPDevKitExeUrl = "$CloudStorage/hpdevkit-windows/hpdevkit.exe";
+$HPDevKitExeUrl = "$($CloudStorage)/hpdevkit-windows/hpdevkit.exe";
 $HPDevKitBackup = "\hpdevkit.exe.bak";
-$ExePath = ((Get-Process -Id $pid).Path).Replace("\hpdevkit.exe", "")
+$ExePath = (Get-Process -Id $pid).Path
 
 function DevKitContainer([string]$Mode, [string]$Name, [switch]$Detached, [switch]$AutoRemove, [switch]$MountSock, [switch]$MountVolume, [string]$EntryPoint, [string]$Cmd, [switch]$Status) {
 
@@ -147,25 +147,25 @@ Function CodeGenerator() {
 }
 
 Function UpdateHPDevKit() {
-    Write-Host "Checking for hpdevkit updates..."
+    Write-Host "Checking for HotPocket devkit updates..."
     $ResHeaders = (Invoke-WebRequest -Uri $HPDevKitExeUrl -Method Head -UseBasicParsing).Headers
     $LastRemoteModifiedTime = [datetime]$ResHeaders["Last-Modified"]
 
-    $currentExeModifiedTime = [datetime]((Get-ItemProperty -Path "$ExePath\hpdevkit.exe" -Name LastWriteTime).LastWriteTime).ToUniversalTime()
+    $currentExeModifiedTime = [datetime]((Get-ItemProperty -Path "$($ExePath)\hpdevkit.exe" -Name LastWriteTime).LastWriteTime).ToUniversalTime()
     if ($ResHeaders["Last-Modified"]) {
         if ($LastRemoteModifiedTime -lt $currentExeModifiedTime) {
-            Write-Host "Your hpdevkit is up to date." 
+            Write-Host "Your HotPocket devkit is up to date." 
         }
         else {
-            Write-Host "An hpdevkit update is available."
+            Write-Host "An HotPocket devkit update is available."
             # Download the updated version.
             Write-Host "Downloading the update..."
-            Invoke-WebRequest -Uri $HPDevKitExeUrl -OutFile "$ExePath\hpdevkit.exe.new"
+            Invoke-WebRequest -Uri $HPDevKitExeUrl -OutFile "$($ExePath)\hpdevkit.exe.new"
 
             # Swap the files.
-            Rename-Item -Path "$ExePath\hpdevkit.exe" -NewName "$ExePath\$HPDevKitBackup"
-            Rename-Item -Path "$ExePath\hpdevkit.exe.new" -NewName "$ExePath\hpdevkit.exe"
-            Write-Host "hpdevkit update completed !!"
+            Rename-Item -Path "$($ExePath)\hpdevkit.exe" -NewName "$($ExePath)\$($HPDevKitBackup)"
+            Rename-Item -Path "$($ExePath)\hpdevkit.exe.new" -NewName "$($ExePath)\hpdevkit.exe"
+            Write-Host "HotPocket devkit update completed !!"
         }
 
     }
@@ -173,18 +173,27 @@ Function UpdateHPDevKit() {
         Write-Host "Could not check for hpdevkit updates. Online installer not found."
     }
 
-    # # Pull the HPDevkit updated Docker Image from Docker Hub.
-    # Write-Host "Updating $DevKitImage Image"
-    # docker pull $DevKitImage
+    ## Pull the HPDevkit updated Docker Image from Docker Hub.
+    Write-Host "Pulling the latest $DevKitImage Image."
+    docker pull $DevKitImage
 
-    # # Pull the updated Docker instance image from Docker Hub.
-    # Write-Host "Updating $InstanceImage Image"
-    # docker pull $InstanceImage
+    ## Pull the updated Docker instance image from Docker Hub.
+    Write-Host "Pulling the latest $InstanceImage Image."
+    docker pull $InstanceImage
 }
 
-if (Test-Path -Path "$ExePath\$HPDevKitBackup") {
+if ($ExePath.Contains('hpdevkit.exe')) {
+    # If Command Prompt is used.
+    $ExePath = $ExePath.Replace("\hpdevkit.exe", "")
+}
+elseif ($ExePath.Contains('powershell.exe')) {
+    # If Powershell is used.
+    $ExePath = $PSScriptRoot
+}
+
+if (Test-Path -Path "$($ExePath)\$($HPDevKitBackup)") {
     # Removing the previous version backup file when launching the new version.
-    Remove-Item "$ExePath\$HPDevKitBackup"
+    Remove-Item "$($ExePath)\$($HPDevKitBackup)"
 }
 
 Write-Host "HotPocket devkit launcher ($($Version))"
