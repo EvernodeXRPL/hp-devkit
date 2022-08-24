@@ -1,3 +1,4 @@
+#!/bin/bash
 globalPrefix="hpdevkit"
 version="0.1.0"
 
