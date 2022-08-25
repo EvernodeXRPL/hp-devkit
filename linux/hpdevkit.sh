@@ -19,7 +19,7 @@ configOverridesFile="hp.cfg.override"
 codegenOutputDir="/codegen-output"
 
 cloudStorage="https://stevernode.blob.core.windows.net/evernode-beta"
-bashScriptUrl="$cloudStorage/$globalPrefix.sh"
+bashScriptUrl="$cloudStorage/$globalPrefix-linux/$globalPrefix.sh"
 hpdevkitConfigPath="/etc/$globalPrefix"
 scriptVersionTimestampFile="$hpdevkitConfigPath/linuxlauncherscript.timestamp"
 scriptBinPath="/usr/bin/$globalPrefix"
