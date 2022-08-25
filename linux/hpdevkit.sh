@@ -18,7 +18,7 @@ codegenContainerName=$globalPrefix\_codegen
 configOverridesFile="hp.cfg.override"
 codegenOutputDir="/codegen-output"
 
-cloudStorage="https://stevernode.blob.core.windows.net/evernode-dev-bb7ec110-f72e-430e-b297-9210468a4cbb"
+cloudStorage="https://stevernode.blob.core.windows.net/evernode-beta"
 bashScriptUrl="$cloudStorage/$globalPrefix.sh"
 hpdevkitConfigPath="/etc/$globalPrefix"
 scriptVersionTimestampFile="$hpdevkitConfigPath/linuxlauncherscript.timestamp"
@@ -107,7 +107,6 @@ function teardownDeploymentCluster() {
 }
 
 function deploy() {
-
     if [ ! -z $1 ]; then
         path=$1
         initializeDeploymentCluster
@@ -167,9 +166,9 @@ function updateDevKit() {
     else
         local current_script_version_timestamp=$(cat $scriptVersionTimestampFile)
         if [ "$current_script_version_timestamp" == "$latest_script_version_timestamp" ]; then
-            echo "Launcher is already upto date."
+            echo "HotPocket devkit is already upto date."
         else
-            echo "Found a new launcher."
+            echo "Found a new version of HotPocket devkit."
             sudo bash -c "echo $latest_script_version_timestamp >$scriptVersionTimestampFile"
             ! sudo rm $scriptBinPath && echo " Removing previous launcher failed"
             ! sudo curl -fsSL $bashScriptUrl --output $scriptBinPath 2>&1 && echo "Error in downloading the new launcher."
@@ -245,7 +244,7 @@ if [ ! -z "$funcCommand" ]; then
     elif [ "$funcCommand" == "uninstall" ]; then
         echo "Unstalling hpdevkit..."
         uninstall
-        echo -e "Unstallation Completed.\nThank you for using HpDevKit !"
+        echo -e "Unstallation Completed.\nThank you for using HotPocket devkit !"
     elif [ "$funcCommand" == "help" ]; then
         echo -e $helpMessage
     else
