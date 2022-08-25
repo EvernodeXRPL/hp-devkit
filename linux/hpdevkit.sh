@@ -18,6 +18,12 @@ codegenContainerName=$globalPrefix\_codegen
 configOverridesFile="hp.cfg.override"
 codegenOutputDir="/codegen-output"
 
+cloudStorage="https://stevernode.blob.core.windows.net/evernode-dev-bb7ec110-f72e-430e-b297-9210468a4cbb"
+bashScriptUrl="$cloudStorage/$globalPrefix.sh"
+hpdevkitConfigPath="/etc/$globalPrefix"
+scriptVersionTimestampFile="$hpdevkitConfigPath/linuxlauncherscript.timestamp"
+scriptBinPath="/usr/bin/$globalPrefix"
+
 function devKitContainer() {
     command="docker $1 -it"
     if [ ! -z "$NAME" ]; then
@@ -151,15 +157,97 @@ function codeGenerator() {
 
 }
 
+function updateDevKit() {
+    local latest_script_version_timestamp=$(online_version_timestamp $bashScriptUrl)
+    [ -z "$latest_script_version_timestamp" ] && echo "Online launcher not found." && exit 1
+
+    # If Timestamp file is not found, re-run the install function.
+    if [ ! -f $scriptVersionTimestampFile ]; then
+        install
+    else
+        local current_script_version_timestamp=$(cat $scriptVersionTimestampFile)
+        if [ "$current_script_version_timestamp" == "$latest_script_version_timestamp" ]; then
+            echo "Launcher is already upto date."
+        else
+            echo "Found a new launcher."
+            sudo bash -c "echo $latest_script_version_timestamp >$scriptVersionTimestampFile"
+            ! sudo rm $scriptBinPath && echo " Removing previous launcher failed"
+            ! sudo curl -fsSL $bashScriptUrl --output $scriptBinPath 2>&1 && echo "Error in downloading the new launcher."
+            ! sudo chmod +x $scriptBinPath &>/dev/null && echo "Error in changing permission for the launcher."
+        fi
+    fi
+    docker pull $devkitImage &>/dev/null
+    docker pull $instanceImage &>/dev/null
+
+    echo "Update Completed."
+    echo "NOTE: You need to re-deploy your contracts to make the new changes effective."
+}
+
+function online_version_timestamp() {
+    # Send HTTP HEAD request and get last modified timestamp of the installer package or setup.sh.
+    curl --silent --head $1 | grep 'Last-Modified:' | sed 's/[^ ]* //'
+}
+
+function install() {
+    if [[ ! -d $hpdevkitConfigPath ]]; then
+        ! sudo mkdir $hpdevkitConfigPath && echo "Data path creation error." && exit 1
+    fi
+
+    # Creating timestamp file
+    local latest_script_version_timestamp=$(online_version_timestamp $bashScriptUrl)
+    sudo bash -c "echo $latest_script_version_timestamp >$scriptVersionTimestampFile"
+
+    # Copying the current script file to the bin directory
+    ! sudo curl -fsSL $bashScriptUrl --output $scriptBinPath 2>/dev/null && echo "Binary copying to '/usr/bin' failed." && exit 1
+    ! sudo chmod +x $scriptBinPath 2>&1 && echo "Error in changing permission for the launcher." && exit 1
+
+}
+
+function uninstall() {
+    if [[ -d $hpdevkitConfigPath ]]; then
+        sudo rm $hpdevkitConfigPath/* 2>/dev/null
+        sudo rm -d $hpdevkitConfigPath
+    fi
+
+    if [[ -f "/usr/bin/hpdevkit" ]]; then
+        sudo rm "$scriptBinPath"
+    fi
+}
+
 echo "HotPocket devkit launcher ($version)"
 
 funcCommand=$1
-funcCommandError="Invalid command. Expected: deploy | clean | start | stop | logs | gen"
+helpMessage="\nAvailable commands: hpdevkit <COMMAND> <ARGUMENTS if any>
+                \n  COMMANDS:
+                \n\tdeploy <Contract path>
+                \n\tclean
+                \n\tstart <Node number>
+                \n\tstop <Node number>
+                \n\tlogs <Node number>
+                \n\tgen <Platform> <App type> <Project name>
+                \n\tupdate
+                \n\tuninstall
+                \n\thelp"
+funcCommandError="Invalid command. Try 'hpdevkit help' for available commands."
 
 if [ ! -z "$funcCommand" ]; then
     if [ "$funcCommand" == "gen" ]; then
         echo "Code generator"
         codeGenerator $2 $3 $4
+    elif [ "$funcCommand" == "update" ]; then
+        echo "Checking for updates..."
+        updateDevKit
+    elif [ "$funcCommand" == "install" ]; then
+        echo "Installing..."
+        install
+        echo "Installation completed."
+        echo -e $helpMessage
+    elif [ "$funcCommand" == "uninstall" ]; then
+        echo "Unstalling hpdevkit..."
+        uninstall
+        echo -e "Unstallation Completed.\nThank you for using HpDevKit !"
+    elif [ "$funcCommand" == "help" ]; then
+        echo -e $helpMessage
     else
         echo "command: $funcCommand (cluster: $cluster)"
         if [ "$funcCommand" == "deploy" ]; then
@@ -173,7 +261,7 @@ if [ ! -z "$funcCommand" ]; then
         fi
     fi
 else
-    echo "$funcCommandError"
+    echo -e $helpMessage
 fi
 
 exit 0
