@@ -18,6 +18,12 @@ codegenContainerName=$globalPrefix\_codegen
 configOverridesFile="hp.cfg.override"
 codegenOutputDir="/codegen-output"
 
+cloudStorage="https://stevernode.blob.core.windows.net/evernode-beta"
+bashScriptUrl="$cloudStorage/$globalPrefix-linux/$globalPrefix.sh"
+hpdevkitDataDir="/etc/$globalPrefix"
+versionTimestampFile="$hpdevkitDataDir/linuxlauncherscript.timestamp"
+scriptBinPath="/usr/bin/$globalPrefix"
+
 function devKitContainer() {
     command="docker $1 -it"
     if [ ! -z "$NAME" ]; then
@@ -101,14 +107,13 @@ function teardownDeploymentCluster() {
 }
 
 function deploy() {
-
-    if [ ! -z $1 ]; then
-        path=$1
+    if [ ! -z "$1" ]; then
+        path="$1"
         initializeDeploymentCluster
 
         # If copying a directory, delete target bundle directory. If not create empty target bundle directory to copy a file.
         prepareBundleDir="  "
-        if [[ -d $path ]]; then
+        if [[ -d "$path" ]]; then
             prepareBundleDir="rm -rf $bundleMount"
 
         else
@@ -116,7 +121,7 @@ function deploy() {
         fi
 
         CONTAINERNAME="$deploymentContainerName" executeInContainer "$prepareBundleDir"
-        docker cp $path "$deploymentContainerName:$bundleMount"
+        docker cp "$path" "$deploymentContainerName:$bundleMount"
 
         # Sync contract bundle to all instance directories in the cluster.
         CONTAINERNAME="$deploymentContainerName" executeInContainer "cluster stop ; cluster sync ; cluster start"
@@ -151,19 +156,109 @@ function codeGenerator() {
 
 }
 
+function updateDevKit() {
+    local latestVersionTimestamp=$(online_version_timestamp $bashScriptUrl)
+    [ -z "$latestVersionTimestamp" ] && echo "Online launcher not found." && exit 1
+
+    # If Timestamp file is not found, re-run the install function.
+    if [ ! -f $versionTimestampFile ]; then
+        install
+    else
+        local currentVersionTimestamp=$(cat $versionTimestampFile)
+        if [ "$currentVersionTimestamp" == "$latestVersionTimestamp" ]; then
+            echo "HotPocket devkit is already upto date."
+        else
+            echo "Found a new version of HotPocket devkit."
+            ! rm $scriptBinPath && echo " Removing previous launcher failed"
+            ! curl -fsSL $bashScriptUrl --output $scriptBinPath 2>&1 && echo "Error in downloading the new launcher."
+            ! chmod +x $scriptBinPath &>/dev/null && echo "Error in changing permission for the launcher."
+            echo $latestVersionTimestamp >$versionTimestampFile
+        fi
+    fi
+
+    echo "Updating docker images..."
+    docker pull $devkitImage &>/dev/null
+    docker pull $instanceImage &>/dev/null
+
+    echo "Update Completed."
+    echo "NOTE: You need to re-deploy your contracts to make the new changes effective."
+}
+
+function online_version_timestamp() {
+    # Send HTTP HEAD request and get last modified timestamp of the installer package or setup.sh.
+    curl --silent --head $1 | grep 'Last-Modified:' | sed 's/[^ ]* //'
+}
+
+function install() {
+    if [[ ! -d $hpdevkitDataDir ]]; then
+        ! mkdir $hpdevkitDataDir && echo "Data path creation error." && exit 1
+    fi
+
+    # Copying the current script file to the bin directory
+    ! curl -fsSL $bashScriptUrl --output $scriptBinPath 2>/dev/null && echo "Binary copying to '/usr/bin' failed." && exit 1
+    ! chmod +x $scriptBinPath 2>&1 && echo "Error in changing permission for the launcher." && exit 1
+
+    # Creating timestamp file
+    local latestVersionTimestamp=$(online_version_timestamp $bashScriptUrl)
+    echo $latestVersionTimestamp >$versionTimestampFile
+}
+
+function uninstall() {
+    if [[ -d $hpdevkitDataDir ]]; then
+        rm $hpdevkitDataDir/* 2>/dev/null
+        rm -d $hpdevkitDataDir
+    fi
+
+    if [[ -f "/usr/bin/hpdevkit" ]]; then
+        rm "$scriptBinPath"
+    fi
+}
+
+function is_user_root() {
+    [ "$(id -u)" -ne 0 ] && echo "Please run with root privileges (sudo)." && exit 1
+}
+
 echo "HotPocket devkit launcher ($version)"
 
 funcCommand=$1
-funcCommandError="Invalid command. Expected: deploy | clean | start | stop | logs | gen"
+helpMessage="\nAvailable commands: hpdevkit <COMMAND> <ARGUMENTS if any>
+                \n  COMMANDS:
+                \n\tdeploy <Contract path>
+                \n\tclean
+                \n\tstart <Node number>
+                \n\tstop <Node number>
+                \n\tlogs <Node number>
+                \n\tgen <Platform> <App type> <Project name>
+                \n\tupdate
+                \n\tuninstall
+                \n\thelp"
+funcCommandError="Invalid command. Try 'hpdevkit help' for available commands."
 
 if [ ! -z "$funcCommand" ]; then
     if [ "$funcCommand" == "gen" ]; then
         echo "Code generator"
         codeGenerator $2 $3 $4
+    elif [ "$funcCommand" == "update" ]; then
+        is_user_root
+        echo "Checking for updates..."
+        updateDevKit
+    elif [ "$funcCommand" == "install" ]; then
+        is_user_root
+        echo "Installing..."
+        install
+        echo "Installation completed."
+        echo -e $helpMessage
+    elif [ "$funcCommand" == "uninstall" ]; then
+        is_user_root
+        echo "Unstalling hpdevkit..."
+        uninstall
+        echo -e "Unstallation Completed.\nThank you for using HotPocket devkit !"
+    elif [ "$funcCommand" == "help" ]; then
+        echo -e $helpMessage
     else
         echo "command: $funcCommand (cluster: $cluster)"
         if [ "$funcCommand" == "deploy" ]; then
-            deploy $2
+            deploy "$2"
         elif [ "$funcCommand" == "clean" ]; then
             teardownDeploymentCluster
         elif [[ "$funcCommand" == "logs" || "$funcCommand" == "start" || "$funcCommand" == "stop" ]]; then
@@ -173,7 +268,7 @@ if [ ! -z "$funcCommand" ]; then
         fi
     fi
 else
-    echo "$funcCommandError"
+    echo -e $helpMessage
 fi
 
 exit 0
