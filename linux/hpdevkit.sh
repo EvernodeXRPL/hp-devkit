@@ -109,7 +109,6 @@ function teardownDeploymentCluster() {
 function deploy() {
     if [ ! -z "$1" ]; then
         path="$1"
-        echo "$path"
         initializeDeploymentCluster
 
         # If copying a directory, delete target bundle directory. If not create empty target bundle directory to copy a file.
