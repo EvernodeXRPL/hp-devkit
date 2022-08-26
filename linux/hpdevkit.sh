@@ -20,8 +20,8 @@ codegenOutputDir="/codegen-output"
 
 cloudStorage="https://stevernode.blob.core.windows.net/evernode-beta"
 bashScriptUrl="$cloudStorage/$globalPrefix-linux/$globalPrefix.sh"
-hpdevkitConfigPath="/etc/$globalPrefix"
-scriptVersionTimestampFile="$hpdevkitConfigPath/linuxlauncherscript.timestamp"
+hpdevkitDataDir="/etc/$globalPrefix"
+versionTimestampFile="$hpdevkitDataDir/linuxlauncherscript.timestamp"
 scriptBinPath="/usr/bin/$globalPrefix"
 
 function devKitContainer() {
@@ -158,24 +158,26 @@ function codeGenerator() {
 }
 
 function updateDevKit() {
-    local latest_script_version_timestamp=$(online_version_timestamp $bashScriptUrl)
-    [ -z "$latest_script_version_timestamp" ] && echo "Online launcher not found." && exit 1
+    local latestVersionTimestamp=$(online_version_timestamp $bashScriptUrl)
+    [ -z "$latestVersionTimestamp" ] && echo "Online launcher not found." && exit 1
 
     # If Timestamp file is not found, re-run the install function.
-    if [ ! -f $scriptVersionTimestampFile ]; then
+    if [ ! -f $versionTimestampFile ]; then
         install
     else
-        local current_script_version_timestamp=$(cat $scriptVersionTimestampFile)
-        if [ "$current_script_version_timestamp" == "$latest_script_version_timestamp" ]; then
+        local currentVersionTimestamp=$(cat $versionTimestampFile)
+        if [ "$currentVersionTimestamp" == "$latestVersionTimestamp" ]; then
             echo "HotPocket devkit is already upto date."
         else
             echo "Found a new version of HotPocket devkit."
-            sudo bash -c "echo $latest_script_version_timestamp >$scriptVersionTimestampFile"
-            ! sudo rm $scriptBinPath && echo " Removing previous launcher failed"
-            ! sudo curl -fsSL $bashScriptUrl --output $scriptBinPath 2>&1 && echo "Error in downloading the new launcher."
-            ! sudo chmod +x $scriptBinPath &>/dev/null && echo "Error in changing permission for the launcher."
+            ! rm $scriptBinPath && echo " Removing previous launcher failed"
+            ! curl -fsSL $bashScriptUrl --output $scriptBinPath 2>&1 && echo "Error in downloading the new launcher."
+            ! chmod +x $scriptBinPath &>/dev/null && echo "Error in changing permission for the launcher."
+            echo $latestVersionTimestamp >$versionTimestampFile
         fi
     fi
+
+    echo "Updating docker images..."
     docker pull $devkitImage &>/dev/null
     docker pull $instanceImage &>/dev/null
 
@@ -189,29 +191,32 @@ function online_version_timestamp() {
 }
 
 function install() {
-    if [[ ! -d $hpdevkitConfigPath ]]; then
-        ! sudo mkdir $hpdevkitConfigPath && echo "Data path creation error." && exit 1
+    if [[ ! -d $hpdevkitDataDir ]]; then
+        ! mkdir $hpdevkitDataDir && echo "Data path creation error." && exit 1
     fi
 
-    # Creating timestamp file
-    local latest_script_version_timestamp=$(online_version_timestamp $bashScriptUrl)
-    sudo bash -c "echo $latest_script_version_timestamp >$scriptVersionTimestampFile"
-
     # Copying the current script file to the bin directory
-    ! sudo curl -fsSL $bashScriptUrl --output $scriptBinPath 2>/dev/null && echo "Binary copying to '/usr/bin' failed." && exit 1
-    ! sudo chmod +x $scriptBinPath 2>&1 && echo "Error in changing permission for the launcher." && exit 1
+    ! curl -fsSL $bashScriptUrl --output $scriptBinPath 2>/dev/null && echo "Binary copying to '/usr/bin' failed." && exit 1
+    ! chmod +x $scriptBinPath 2>&1 && echo "Error in changing permission for the launcher." && exit 1
 
+    # Creating timestamp file
+    local latestVersionTimestamp=$(online_version_timestamp $bashScriptUrl)
+    echo $latestVersionTimestamp >$versionTimestampFile
 }
 
 function uninstall() {
-    if [[ -d $hpdevkitConfigPath ]]; then
-        sudo rm $hpdevkitConfigPath/* 2>/dev/null
-        sudo rm -d $hpdevkitConfigPath
+    if [[ -d $hpdevkitDataDir ]]; then
+        rm $hpdevkitDataDir/* 2>/dev/null
+        rm -d $hpdevkitDataDir
     fi
 
     if [[ -f "/usr/bin/hpdevkit" ]]; then
-        sudo rm "$scriptBinPath"
+        rm "$scriptBinPath"
     fi
+}
+
+function is_user_root() {
+    [ "$(id -u)" -ne 0 ] && echo "Please run with root privileges (sudo)." && exit 1
 }
 
 echo "HotPocket devkit launcher ($version)"
@@ -235,14 +240,17 @@ if [ ! -z "$funcCommand" ]; then
         echo "Code generator"
         codeGenerator $2 $3 $4
     elif [ "$funcCommand" == "update" ]; then
+        is_user_root
         echo "Checking for updates..."
         updateDevKit
     elif [ "$funcCommand" == "install" ]; then
+        is_user_root
         echo "Installing..."
         install
         echo "Installation completed."
         echo -e $helpMessage
     elif [ "$funcCommand" == "uninstall" ]; then
+        is_user_root
         echo "Unstalling hpdevkit..."
         uninstall
         echo -e "Unstallation Completed.\nThank you for using HotPocket devkit !"
