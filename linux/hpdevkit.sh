@@ -107,13 +107,14 @@ function teardownDeploymentCluster() {
 }
 
 function deploy() {
-    if [ ! -z $1 ]; then
-        path=$1
+    if [ ! -z "$1" ]; then
+        path="$1"
+        echo "$path"
         initializeDeploymentCluster
 
         # If copying a directory, delete target bundle directory. If not create empty target bundle directory to copy a file.
         prepareBundleDir="  "
-        if [[ -d $path ]]; then
+        if [[ -d "$path" ]]; then
             prepareBundleDir="rm -rf $bundleMount"
 
         else
@@ -121,7 +122,7 @@ function deploy() {
         fi
 
         CONTAINERNAME="$deploymentContainerName" executeInContainer "$prepareBundleDir"
-        docker cp $path "$deploymentContainerName:$bundleMount"
+        docker cp "$path" "$deploymentContainerName:$bundleMount"
 
         # Sync contract bundle to all instance directories in the cluster.
         CONTAINERNAME="$deploymentContainerName" executeInContainer "cluster stop ; cluster sync ; cluster start"
@@ -250,7 +251,7 @@ if [ ! -z "$funcCommand" ]; then
     else
         echo "command: $funcCommand (cluster: $cluster)"
         if [ "$funcCommand" == "deploy" ]; then
-            deploy $2
+            deploy "$2"
         elif [ "$funcCommand" == "clean" ]; then
             teardownDeploymentCluster
         elif [[ "$funcCommand" == "logs" || "$funcCommand" == "start" || "$funcCommand" == "stop" ]]; then
