@@ -16,6 +16,10 @@ $DeploymentContainerName = "$($GlobalPrefix)_$($Cluster)_deploymgr"
 $CodegenContainerName = "$($GlobalPrefix)_codegen"
 $ConfigOverridesFile = "hp.cfg.override"
 $CodegenOutputDir = "/codegen-output"
+$CloudStorage = "https://stevernode.blob.core.windows.net/evernode-beta"
+$HPDevKitExeUrl = "$($CloudStorage)/hpdevkit-windows/hpdevkit.exe";
+$HPDevKitBackup = "\hpdevkit.exe.bak";
+$ExePath = (Get-Process -Id $pid).Path
 
 function DevKitContainer([string]$Mode, [string]$Name, [switch]$Detached, [switch]$AutoRemove, [switch]$MountSock, [switch]$MountVolume, [string]$EntryPoint, [string]$Cmd, [switch]$Status) {
 
@@ -142,10 +146,59 @@ Function CodeGenerator() {
     docker rm "$($CodegenContainerName)" 2>&1 | Out-Null
 }
 
+Function UpdateHPDevKit() {
+    Write-Host "Checking for HotPocket devkit updates..."
+    $ResHeaders = (Invoke-WebRequest -Uri $HPDevKitExeUrl -Method Head -UseBasicParsing).Headers
+    $LastRemoteModifiedTime = [datetime]$ResHeaders["Last-Modified"]
+
+    $currentExeModifiedTime = [datetime]((Get-ItemProperty -Path "$($ExePath)\hpdevkit.exe" -Name LastWriteTime).LastWriteTime).ToUniversalTime()
+    if ($ResHeaders["Last-Modified"]) {
+        if ($LastRemoteModifiedTime -lt $currentExeModifiedTime) {
+            Write-Host "Your HotPocket devkit is up to date." 
+        }
+        else {
+            Write-Host "An HotPocket devkit update is available."
+            # Download the updated version.
+            Write-Host "Downloading the update..."
+            Invoke-WebRequest -Uri $HPDevKitExeUrl -OutFile "$($ExePath)\hpdevkit.exe.new"
+
+            # Swap the files.
+            Rename-Item -Path "$($ExePath)\hpdevkit.exe" -NewName "$($ExePath)\$($HPDevKitBackup)"
+            Rename-Item -Path "$($ExePath)\hpdevkit.exe.new" -NewName "$($ExePath)\hpdevkit.exe"
+            Write-Host "HotPocket devkit update completed !!"
+        }
+
+    }
+    else {
+        Write-Host "Could not check for hpdevkit updates. Online installer not found."
+    }
+
+    ## Pull the HPDevkit updated Docker Image from Docker Hub.
+    Write-Host "Pulling the latest $DevKitImage Image."
+    docker pull $DevKitImage
+
+    ## Pull the updated Docker instance image from Docker Hub.
+    Write-Host "Pulling the latest $InstanceImage Image."
+    docker pull $InstanceImage
+}
+
+if ($ExePath.Contains('hpdevkit.exe')) {
+    $ExePath = $ExePath.Replace("\hpdevkit.exe", "")
+}
+elseif ($ExePath.Contains('powershell.exe')) {
+    # If Powershell script is used.
+    $ExePath = $PSScriptRoot
+}
+
+if (Test-Path -Path "$($ExePath)\$($HPDevKitBackup)") {
+    # Removing the previous version backup file when launching the new version.
+    Remove-Item "$($ExePath)\$($HPDevKitBackup)"
+}
+
 Write-Host "HotPocket devkit launcher ($($Version))"
 
 $Command = $args[0]
-$CommandError = "Invalid command. Expected: deploy | clean | start | stop | logs | gen"
+$CommandError = "Invalid command. Expected: deploy | clean | start | stop | logs | gen | update"
 
 if ($Command) {
 
@@ -163,6 +216,17 @@ if ($Command) {
         }
         elseif ($Command -eq "logs" -OR $Command -eq "start" -OR $Command -eq "stop") {
             DevKitContainer -Mode "run" -AutoRemove -MountSock -EntryPoint "cluster" -Cmd "$($args)"
+        }
+        elseif ($Command -eq "update") {
+            try { 
+                if (Test-Path -Path "$($ExePath)\hpdevkit.exe") {
+                    UpdateHPDevKit  
+                }
+                else {
+                    Write-Host "No HotPocket devkit executable file was found."         
+                }                    
+            }
+            catch { "An error occurred while updating." }
         }
         else {
             Write-Host $CommandError
