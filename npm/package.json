@@ -1,0 +1,19 @@
+{
+  "name": "hp-devkit",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "commander": "^9.4.0",
+    "shelljs": "^0.8.5"
+  },
+  "bin": {
+    "hpdevkit": "./index.js"
+  }
+}
