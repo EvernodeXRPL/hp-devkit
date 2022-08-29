@@ -3,7 +3,7 @@ globalPrefix="hpdevkit"
 version="0.1.0"
 
 cluster="default"
-clusterSize=$([ -z $HP_CLUSTER_SIZE ] && echo 1 || echo "$HP_CLUSTER_SIZE")
+clusterSize=$([ -z $HP_CLUSTER_SIZE ] && echo 3 || echo "$HP_CLUSTER_SIZE")
 defaultNode=$([ -z $HP_DEFAULT_NODE ] && echo 1 || echo "$HP_DEFAULT_NODE")
 devkitImage=$([ -z $HP_DEVKIT_IMAGE ] && echo "evernodedev/hpdevkit" || echo "$HP_DEVKIT_IMAGE")
 instanceImage=$([ -z $HP_INSTANCE_IMAGE ] && echo "evernodedev/hotpocket:latest-ubt.20.04-njs.16" || echo "$HP_INSTANCE_IMAGE")
