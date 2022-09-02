@@ -10,6 +10,8 @@ volume_mount=$VOLUME_MOUNT
 bundle_mount=$BUNDLE_MOUNT
 hotpocket_image=$HOTPOCKET_IMAGE
 config_overrides_file=$CONFIG_OVERRIDES_FILE
+user_port_begin=$HP_USER_PORT_BEGIN
+peer_port_begin=$HP_PEER_PORT_BEGIN
 
 if [ "$command" = "create" ] || [ "$command" = "bindmesh" ] || [ "$command" = "destroy" ] || \
     [ "$command" = "start" ] || [ "$command" = "stop" ] || \
@@ -72,8 +74,8 @@ function create_instance {
     # Create contract instance directory.
     docker run --rm --mount type=volume,src=$volume,dst=$volume_mount --rm $hotpocket_image new $volume_mount/node$node
 
-    let peer_port=22860+$node
-    let user_port=8080+$node
+    let peer_port=$(($peer_port_begin + $node))
+    let user_port=$(($user_port_begin + $node))
 
     # Create container for hotpocket instance.
     local container_name="${container_prefix}_$node"
@@ -119,7 +121,7 @@ function joinarr {
 # Update all instances hotpocket configs so they connect to each other as a cluster.
 function bind_mesh {
     local instance_count=$(get_container_count)
-    
+
     # Collect pubkeys and peers of all nodes.
     local all_pubkeys
     local all_peers
@@ -133,8 +135,8 @@ function bind_mesh {
         [ $i -eq 1 ] && contract_id=$(jq ".contract.id" $cfg_file)
 
         # Assign user and peer ports in incrementing order.
-        let peer_port=22860+$i
-        let user_port=8080+$i
+        let peer_port=$(($peer_port_begin + $i))
+        let user_port=$(($user_port_begin + $i))
 
         jq ".contract.id=$contract_id | .contract.roundtime=2000 | .mesh.port=$peer_port | .user.port=$user_port" $cfg_file > $cfg_file.tmp \
             && mv $cfg_file.tmp $cfg_file

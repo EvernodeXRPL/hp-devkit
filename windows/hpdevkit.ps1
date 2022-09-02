@@ -6,6 +6,8 @@ $ClusterSize = if ($env:HP_CLUSTER_SIZE) { $env:HP_CLUSTER_SIZE } else { 3 };
 $DefaultNode = if ($env:HP_DEFAULT_NODE) { $env:HP_DEFAULT_NODE } else { 1 };
 $DevKitImage = if ($env:HP_DEVKIT_IMAGE) { $env:HP_DEVKIT_IMAGE } else { "evernodedev/hpdevkit" };
 $InstanceImage = if ($env:HP_INSTANCE_IMAGE) { $env:HP_INSTANCE_IMAGE } else { "evernodedev/hotpocket:latest-ubt.20.04-njs.16" };
+$HpUserPortBegin = if ($env:HP_CLUSTER_SIZE) { $env:HP_CLUSTER_SIZE } else { 8080 };
+$HpPeerPortBegin = if ($env:HP_USER_PORT_BEGIN) { $env:HP_PEER_PORT_BEGIN } else { 22860 };
 
 $VolumeMount = "/$($GlobalPrefix)_vol"
 $Volume = "$($GlobalPrefix)_$($Cluster)_vol"
@@ -53,6 +55,7 @@ function DevKitContainer([string]$Mode, [string]$Name, [switch]$Detached, [switc
     $Command += " -e CLUSTER=$($Cluster) -e CLUSTER_SIZE=$($ClusterSize) -e DEFAULT_NODE=$($DefaultNode) -e VOLUME=$($Volume) -e NETWORK=$($Network)"
     $Command += " -e CONTAINER_PREFIX=$($ContainerPrefix) -e VOLUME_MOUNT=$($VolumeMount) -e BUNDLE_MOUNT=$($BundleMount) -e HOTPOCKET_IMAGE=$($InstanceImage)"
     $Command += " -e CONFIG_OVERRIDES_FILE=$($ConfigOverridesFile) -e CODEGEN_OUTPUT=$($CodegenOutputDir)"
+    $Command += " -e HP_USER_PORT_BEGIN=$($HpUserPortBegin) -e HP_PEER_PORT_BEGIN=$($HpPeerPortBegin)"
 
     $Command += " $($DevKitImage)"
     if ($Cmd) {

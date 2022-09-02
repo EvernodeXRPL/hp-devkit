@@ -7,6 +7,8 @@ clusterSize=$([ -z $HP_CLUSTER_SIZE ] && echo 3 || echo "$HP_CLUSTER_SIZE")
 defaultNode=$([ -z $HP_DEFAULT_NODE ] && echo 1 || echo "$HP_DEFAULT_NODE")
 devkitImage=$([ -z $HP_DEVKIT_IMAGE ] && echo "evernodedev/hpdevkit" || echo "$HP_DEVKIT_IMAGE")
 instanceImage=$([ -z $HP_INSTANCE_IMAGE ] && echo "evernodedev/hotpocket:latest-ubt.20.04-njs.16" || echo "$HP_INSTANCE_IMAGE")
+hpUserPortBegin=$([ -z $HP_CLUSTER_SIZE ] && echo 8080 || echo "$HP_CLUSTER_SIZE")
+hpPeerPortBegin=$([ -z $HP_USER_PORT_BEGIN ] && echo 22860 || echo "$HP_PEER_PORT_BEGIN")
 
 volumeMount=/$globalPrefix\_vol
 volume=$globalPrefix\_$cluster\_vol
@@ -55,6 +57,7 @@ function devKitContainer() {
     command+=" -e CLUSTER=$cluster -e CLUSTER_SIZE=$clusterSize -e DEFAULT_NODE=$defaultNode -e VOLUME=$volume -e NETWORK=$network"
     command+=" -e CONTAINER_PREFIX=$containerPrefix -e VOLUME_MOUNT=$volumeMount -e BUNDLE_MOUNT=$bundleMount -e HOTPOCKET_IMAGE=$instanceImage"
     command+=" -e CONFIG_OVERRIDES_FILE=$configOverridesFile -e CODEGEN_OUTPUT=$codegenOutputDir"
+    command+=" -e HP_USER_PORT_BEGIN=$hpUserPortBegin -e HP_PEER_PORT_BEGIN=$hpPeerPortBegin"
 
     command+=" $devkitImage"
 
@@ -184,18 +187,26 @@ function updateDevKit() {
     echo "NOTE: You need to re-deploy your contracts to make the new changes effective."
 }
 
+function check_existance() {
+    command -v hpdevkit &>/dev/null && [ -f $scriptBinPath ] && [ -d $hpdevkitDataDir ] &&
+        echo "hpdevkit is already installed on your host. \nUse the 'hpdevkit' start your local HotPocket testing." &&
+        exit 1
+}
+
 function online_version_timestamp() {
     # Send HTTP HEAD request and get last modified timestamp of the installer package or setup.sh.
     curl --silent --head $1 | grep 'Last-Modified:' | sed 's/[^ ]* //'
 }
 
 function install() {
+    check_existance
+
     if [[ ! -d $hpdevkitDataDir ]]; then
         ! mkdir $hpdevkitDataDir && echo "Data path creation error." && exit 1
     fi
 
     # Copying the current script file to the bin directory
-    ! curl -fsSL $bashScriptUrl --output $scriptBinPath 2>/dev/null && echo "Binary copying to '/usr/bin' failed." && exit 1
+    ! curl -fsSL $bashScriptUrl --output $scriptBinPath 2>/dev/null && echo "Copying the binary to '/usr/bin' failed." && exit 1
     ! chmod +x $scriptBinPath 2>&1 && echo "Error in changing permission for the launcher." && exit 1
 
     # Creating timestamp file
@@ -205,11 +216,10 @@ function install() {
 
 function uninstall() {
     if [[ -d $hpdevkitDataDir ]]; then
-        rm $hpdevkitDataDir/* 2>/dev/null
-        rm -d $hpdevkitDataDir
+        rm -r $hpdevkitDataDir
     fi
 
-    if [[ -f "/usr/bin/hpdevkit" ]]; then
+    if [[ -f "$scriptBinPath" ]]; then
         rm "$scriptBinPath"
     fi
 }
