@@ -52,6 +52,10 @@ function devKitContainer() {
         command+=" --entrypoint /bin/bash"
     fi
 
+    if [ ! -z "$RESTARTPOLICY" ]; then
+        command+=" --restart $RESTARTPOLICY"
+    fi
+
     command+=" -e CLUSTER=$cluster -e CLUSTER_SIZE=$clusterSize -e DEFAULT_NODE=$defaultNode -e VOLUME=$volume -e NETWORK=$network"
     command+=" -e CONTAINER_PREFIX=$containerPrefix -e VOLUME_MOUNT=$volumeMount -e BUNDLE_MOUNT=$bundleMount -e HOTPOCKET_IMAGE=$instanceImage"
     command+=" -e CONFIG_OVERRIDES_FILE=$configOverridesFile -e CODEGEN_OUTPUT=$codegenOutputDir"
@@ -93,7 +97,7 @@ function initializeDeploymentCluster() {
         AUTOREMOVE="true" MOUNTSOCK="true" CMD="cluster stop ; cluster create" devKitContainer run
 
         # Spin up management container.
-        NAME="$deploymentContainerName" DETACHED="true" MOUNTSOCK="true" MOUNTVOLUME="true" devKitContainer run
+        NAME="$deploymentContainerName" DETACHED="true" MOUNTSOCK="true" MOUNTVOLUME="true" RESTARTPOLICY="unless-stopped" devKitContainer run
 
         # Bind the instance mesh network config together.
         CONTAINERNAME="$deploymentContainerName" executeInContainer "cluster bindmesh"

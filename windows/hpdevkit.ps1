@@ -21,7 +21,7 @@ $HPDevKitExeUrl = "$($CloudStorage)/hpdevkit-windows/hpdevkit.exe";
 $HPDevKitBackup = "\hpdevkit.exe.bak";
 $ExePath = (Get-Process -Id $pid).Path
 
-function DevKitContainer([string]$Mode, [string]$Name, [switch]$Detached, [switch]$AutoRemove, [switch]$MountSock, [switch]$MountVolume, [string]$EntryPoint, [string]$Cmd, [switch]$Status) {
+function DevKitContainer([string]$Mode, [string]$Name, [switch]$Detached, [switch]$AutoRemove, [switch]$MountSock, [switch]$MountVolume, [string]$EntryPoint, [string]$RestartPolicy, [string]$Cmd, [switch]$Status) {
 
     $Command = "docker $($Mode) -it"
     if ($Name) {
@@ -47,6 +47,10 @@ function DevKitContainer([string]$Mode, [string]$Name, [switch]$Detached, [switc
     }
     else {
         $Command += " --entrypoint /bin/bash"
+    }
+
+    if ($RestartPolicy) {
+        $Command += " --restart $($RestartPolicy)"
     }
 
     # Pass environment variables used by our scripts.
@@ -89,7 +93,7 @@ function InitializeDeploymentCluster() {
         DevKitContainer -Mode "run" -AutoRemove -MountSock -Cmd "cluster stop ; cluster create"
 
         # Spin up management container.
-        DevKitContainer -Mode "run" -Name $DeploymentContainerName -Detached -MountSock -MountVolume
+        DevKitContainer -Mode "run" -Name $DeploymentContainerName -Detached -MountSock -MountVolume -RestartPolicy "unless-stopped"
 
         # Bind the instance mesh network config together.
         ExecuteInDeploymentContainer -Cmd "cluster bindmesh"
@@ -105,7 +109,7 @@ function TeardownDeploymentCluster() {
 Function Deploy([string]$Path) {
 
     if ($Path) {
-        
+
         InitializeDeploymentCluster
 
         # If copying a directory, delete target bundle directory. If not create empty target bundle directory to copy a file.
@@ -218,13 +222,13 @@ if ($Command) {
             DevKitContainer -Mode "run" -AutoRemove -MountSock -EntryPoint "cluster" -Cmd "$($args)"
         }
         elseif ($Command -eq "update") {
-            try { 
+            try {
                 if (Test-Path -Path "$($ExePath)\hpdevkit.exe") {
-                    UpdateHPDevKit  
+                    UpdateHPDevKit
                 }
                 else {
-                    Write-Host "No HotPocket devkit executable file was found."         
-                }                    
+                    Write-Host "No HotPocket devkit executable file was found."
+                }
             }
             catch { "An error occurred while updating." }
         }
