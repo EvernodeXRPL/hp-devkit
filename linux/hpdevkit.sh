@@ -7,8 +7,8 @@ clusterSize=$([ -z $HP_CLUSTER_SIZE ] && echo 3 || echo "$HP_CLUSTER_SIZE")
 defaultNode=$([ -z $HP_DEFAULT_NODE ] && echo 1 || echo "$HP_DEFAULT_NODE")
 devkitImage=$([ -z $HP_DEVKIT_IMAGE ] && echo "evernodedev/hpdevkit" || echo "$HP_DEVKIT_IMAGE")
 instanceImage=$([ -z $HP_INSTANCE_IMAGE ] && echo "evernodedev/hotpocket:latest-ubt.20.04-njs.16" || echo "$HP_INSTANCE_IMAGE")
-hpUserPortBegin=$([ -z $HP_CLUSTER_SIZE ] && echo 8080 || echo "$HP_CLUSTER_SIZE")
-hpPeerPortBegin=$([ -z $HP_USER_PORT_BEGIN ] && echo 22860 || echo "$HP_PEER_PORT_BEGIN")
+hpUserPortBegin=$([ -z $HP_USER_PORT_BEGIN ] && echo 8080 || echo "$HP_USER_PORT_BEGIN")
+hpPeerPortBegin=$([ -z $HP_PEER_PORT_BEGIN ] && echo 22860 || echo "$HP_PEER_PORT_BEGIN")
 
 volumeMount=/$globalPrefix\_vol
 volume=$globalPrefix\_$cluster\_vol
@@ -20,7 +20,7 @@ codegenContainerName=$globalPrefix\_codegen
 configOverridesFile="hp.cfg.override"
 codegenOutputDir="/codegen-output"
 
-cloudStorage="https://stevernode.blob.core.windows.net/evernode-beta"
+cloudStorage="https://stevernode.blob.core.windows.net/evernode-dev-bb7ec110-f72e-430e-b297-9210468a4cbb"
 bashScriptUrl="$cloudStorage/$globalPrefix-linux/$globalPrefix.sh"
 hpdevkitDataDir="/etc/$globalPrefix"
 versionTimestampFile="$hpdevkitDataDir/linuxlauncherscript.timestamp"
