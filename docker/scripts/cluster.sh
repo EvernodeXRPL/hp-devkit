@@ -74,8 +74,8 @@ function create_instance {
     # Create contract instance directory.
     docker run --rm --mount type=volume,src=$volume,dst=$volume_mount --rm $hotpocket_image new $volume_mount/node$node
 
-    let peer_port=$(($peer_port_begin + $node))
-    let user_port=$(($user_port_begin + $node))
+    let peer_port=$(($peer_port_begin + $node - 1))
+    let user_port=$(($user_port_begin + $node - 1))
 
     # Create container for hotpocket instance.
     local container_name="${container_prefix}_$node"
@@ -135,8 +135,8 @@ function bind_mesh {
         [ $i -eq 1 ] && contract_id=$(jq ".contract.id" $cfg_file)
 
         # Assign user and peer ports in incrementing order.
-        let peer_port=$(($peer_port_begin + $i))
-        let user_port=$(($user_port_begin + $i))
+        let peer_port=$(($peer_port_begin + $i - 1))
+        let user_port=$(($user_port_begin + $i - 1))
 
         jq ".contract.id=$contract_id | .contract.roundtime=2000 | .mesh.port=$peer_port | .user.port=$user_port" $cfg_file > $cfg_file.tmp \
             && mv $cfg_file.tmp $cfg_file

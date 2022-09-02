@@ -7,8 +7,8 @@ clusterSize=$([ -z $HP_CLUSTER_SIZE ] && echo 3 || echo "$HP_CLUSTER_SIZE")
 defaultNode=$([ -z $HP_DEFAULT_NODE ] && echo 1 || echo "$HP_DEFAULT_NODE")
 devkitImage=$([ -z $HP_DEVKIT_IMAGE ] && echo "evernodedev/hpdevkit" || echo "$HP_DEVKIT_IMAGE")
 instanceImage=$([ -z $HP_INSTANCE_IMAGE ] && echo "evernodedev/hotpocket:latest-ubt.20.04-njs.16" || echo "$HP_INSTANCE_IMAGE")
-hpUserPortBegin=$([ -z $HP_USER_PORT_BEGIN ] && echo 8080 || echo "$HP_USER_PORT_BEGIN")
-hpPeerPortBegin=$([ -z $HP_PEER_PORT_BEGIN ] && echo 22860 || echo "$HP_PEER_PORT_BEGIN")
+hpUserPortBegin=$([ -z $HP_USER_PORT_BEGIN ] && echo 8081 || echo "$HP_USER_PORT_BEGIN")
+hpPeerPortBegin=$([ -z $HP_PEER_PORT_BEGIN ] && echo 22861 || echo "$HP_PEER_PORT_BEGIN")
 
 volumeMount=/$globalPrefix\_vol
 volume=$globalPrefix\_$cluster\_vol
@@ -159,6 +159,17 @@ function codeGenerator() {
 
 }
 
+function removeLauncher() {
+    rm $scriptBinPath
+}
+
+function createLauncher() {
+    # Copying the current script file to the bin directory
+    ! curl -fsSL $bashScriptUrl --output $scriptBinPath &>/dev/null && echo "Error in creating launcher." && return 1
+    ! chmod +x $scriptBinPath &>/dev/null && echo "Error in changing permission for the launcher." && return 1
+    return 0
+}
+
 function updateDevKit() {
     local latestVersionTimestamp=$(online_version_timestamp $bashScriptUrl)
     [ -z "$latestVersionTimestamp" ] && echo "Online launcher not found." && exit 1
@@ -172,10 +183,10 @@ function updateDevKit() {
             echo "HotPocket devkit is already upto date."
         else
             echo "Found a new version of HotPocket devkit."
-            ! rm $scriptBinPath && echo " Removing previous launcher failed"
-            ! curl -fsSL $bashScriptUrl --output $scriptBinPath 2>&1 && echo "Error in downloading the new launcher."
-            ! chmod +x $scriptBinPath &>/dev/null && echo "Error in changing permission for the launcher."
+            ! removeLauncher && echo "Removing the launcher failed."
+            ! createLauncher && echo "Launcher creation failed."
             echo $latestVersionTimestamp >$versionTimestampFile
+            echo "HotPocket devkit update completed !!"
         fi
     fi
 
@@ -183,7 +194,13 @@ function updateDevKit() {
     docker pull $devkitImage &>/dev/null
     docker pull $instanceImage &>/dev/null
 
-    echo "Update Completed."
+    # Clear if there's already deployed cluster since they are outdated now.
+    if docker inspect $deploymentContainerName &>/dev/null; then
+        echo "Cleaning the deployed contracts..."
+        teardownDeploymentCluster
+    fi
+
+    echo "Update Completed !!"
     echo "NOTE: You need to re-deploy your contracts to make the new changes effective."
 }
 
@@ -205,9 +222,7 @@ function install() {
         ! mkdir $hpdevkitDataDir && echo "Data path creation error." && exit 1
     fi
 
-    # Copying the current script file to the bin directory
-    ! curl -fsSL $bashScriptUrl --output $scriptBinPath 2>/dev/null && echo "Copying the binary to '/usr/bin' failed." && exit 1
-    ! chmod +x $scriptBinPath 2>&1 && echo "Error in changing permission for the launcher." && exit 1
+    ! createLauncher && echo "Launcher creation failed."
 
     # Creating timestamp file
     local latestVersionTimestamp=$(online_version_timestamp $bashScriptUrl)
@@ -215,13 +230,29 @@ function install() {
 }
 
 function uninstall() {
+    # Remove deployment cluster if exist.
+    if docker inspect $deploymentContainerName &>/dev/null; then
+        echo "Cleaning the deployed contracts..."
+        teardownDeploymentCluster
+    fi
+
+    # Remove docker images if exist.
+    if docker image inspect $devkitImage &>/dev/null; then
+        echo "Removing devkit docker image..."
+        docker image rm $devkitImage &>/dev/null
+    fi
+    if docker image inspect $instanceImage &>/dev/null; then
+        echo "Removing instance docker image..."
+        docker image rm $instanceImage &>/dev/null
+    fi
+
+    echo "Removing binaries..."
     if [[ -d $hpdevkitDataDir ]]; then
         rm -r $hpdevkitDataDir
     fi
 
-    if [[ -f "$scriptBinPath" ]]; then
-        rm "$scriptBinPath"
-    fi
+    echo "Removing the launcher..."
+    removeLauncher
 }
 
 function is_user_root() {
