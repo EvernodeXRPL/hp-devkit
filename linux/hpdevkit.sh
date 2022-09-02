@@ -204,9 +204,9 @@ function updateDevKit() {
     echo "NOTE: You need to re-deploy your contracts to make the new changes effective."
 }
 
-function check_existance() {
+function checkExistance() {
     command -v hpdevkit &>/dev/null && [ -f $scriptBinPath ] && [ -d $hpdevkitDataDir ] &&
-        echo "hpdevkit is already installed on your host. \nUse the 'hpdevkit' start your local HotPocket testing." &&
+        echo -e "hpdevkit is already installed on your host. \nUse the 'hpdevkit' start your local HotPocket testing." &&
         exit 1
 }
 
@@ -216,7 +216,7 @@ function online_version_timestamp() {
 }
 
 function install() {
-    check_existance
+    checkExistance
 
     if [[ ! -d $hpdevkitDataDir ]]; then
         ! mkdir $hpdevkitDataDir && echo "Data path creation error." && exit 1
