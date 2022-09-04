@@ -202,13 +202,37 @@ if (Test-Path -Path "$($ExePath)\$($HPDevKitBackup)") {
 Write-Host "HotPocket devkit launcher ($($Version))"
 
 $Command = $args[0]
-$CommandError = "Invalid command. Expected: deploy | clean | start | stop | logs | gen | update"
+$CommandError = "Invalid command. Try 'hpdevkit help' for available commands."
+$HelpMessage = "Available commands: hpdevkit <COMMAND> <ARGUMENTS if any>
+    COMMANDS:
+    deploy <Contract path>
+    clean
+    start <Node number>
+    stop <Node number>
+    logs <Node number>
+    gen <Platform> <App type> <Project name>
+    update
+    help"
 
 if ($Command) {
 
     if ($Command -eq "gen") {
         Write-Host "Code generator"
         CodeGenerator $args[1] $args[2] $args[3]
+    }
+    elseif ($Command -eq "help") {
+        Write-Host $HelpMessage
+    }
+    elseif ($Command -eq "update") {
+        try {
+            if (Test-Path -Path "$($ExePath)\hpdevkit.exe") {
+                UpdateHPDevKit
+            }
+            else {
+                Write-Host "No HotPocket devkit executable file was found."
+            }
+        }
+        catch { "An error occurred while updating." }
     }
     else {
         Write-Host "command: $($Command) (cluster: $($Cluster))"
@@ -220,17 +244,6 @@ if ($Command) {
         }
         elseif ($Command -eq "logs" -OR $Command -eq "start" -OR $Command -eq "stop") {
             DevKitContainer -Mode "run" -AutoRemove -MountSock -EntryPoint "cluster" -Cmd "$($args)"
-        }
-        elseif ($Command -eq "update") {
-            try {
-                if (Test-Path -Path "$($ExePath)\hpdevkit.exe") {
-                    UpdateHPDevKit
-                }
-                else {
-                    Write-Host "No HotPocket devkit executable file was found."
-                }
-            }
-            catch { "An error occurred while updating." }
         }
         else {
             Write-Host $CommandError
