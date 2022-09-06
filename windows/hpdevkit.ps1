@@ -23,7 +23,7 @@ $HPDevKitExeUrl = "$($CloudStorage)/hpdevkit-windows/hpdevkit.exe";
 $HPDevKitBackup = "\hpdevkit.exe.bak";
 $ExePath = (Get-Process -Id $pid).Path
 
-function DevKitContainer([string]$Mode, [string]$Name, [switch]$Detached, [switch]$AutoRemove, [switch]$MountSock, [switch]$MountVolume, [string]$EntryPoint, [string]$Cmd, [switch]$Status) {
+function DevKitContainer([string]$Mode, [string]$Name, [switch]$Detached, [switch]$AutoRemove, [switch]$MountSock, [switch]$MountVolume, [string]$EntryPoint, [string]$RestartPolicy, [string]$Cmd, [switch]$Status) {
 
     $Command = "docker $($Mode) -it"
     if ($Name) {
@@ -49,6 +49,10 @@ function DevKitContainer([string]$Mode, [string]$Name, [switch]$Detached, [switc
     }
     else {
         $Command += " --entrypoint /bin/bash"
+    }
+
+    if ($RestartPolicy) {
+        $Command += " --restart $($RestartPolicy)"
     }
 
     # Pass environment variables used by our scripts.
@@ -92,7 +96,7 @@ function InitializeDeploymentCluster() {
         DevKitContainer -Mode "run" -AutoRemove -MountSock -Cmd "cluster stop ; cluster create"
 
         # Spin up management container.
-        DevKitContainer -Mode "run" -Name $DeploymentContainerName -Detached -MountSock -MountVolume
+        DevKitContainer -Mode "run" -Name $DeploymentContainerName -Detached -MountSock -MountVolume -RestartPolicy "unless-stopped"
 
         # Bind the instance mesh network config together.
         ExecuteInDeploymentContainer -Cmd "cluster bindmesh"
@@ -108,7 +112,7 @@ function TeardownDeploymentCluster() {
 Function Deploy([string]$Path) {
 
     if ($Path) {
-        
+
         InitializeDeploymentCluster
 
         # If copying a directory, delete target bundle directory. If not create empty target bundle directory to copy a file.
@@ -211,13 +215,37 @@ if (Test-Path -Path "$($ExePath)\$($HPDevKitBackup)") {
 Write-Host "HotPocket devkit launcher ($($Version))"
 
 $Command = $args[0]
-$CommandError = "Invalid command. Expected: deploy | clean | start | stop | logs | gen | update"
+$CommandError = "Invalid command. Try 'hpdevkit help' for available commands."
+$HelpMessage = "Available commands: hpdevkit <COMMAND> <ARGUMENTS if any>
+    COMMANDS:
+    deploy <Contract path>
+    clean
+    start <Node number>
+    stop <Node number>
+    logs <Node number>
+    gen <Platform> <App type> <Project name>
+    update
+    help"
 
 if ($Command) {
 
     if ($Command -eq "gen") {
         Write-Host "Code generator"
         CodeGenerator $args[1] $args[2] $args[3]
+    }
+    elseif ($Command -eq "help") {
+        Write-Host $HelpMessage
+    }
+    elseif ($Command -eq "update") {
+        try {
+            if (Test-Path -Path "$($ExePath)\hpdevkit.exe") {
+                UpdateHPDevKit
+            }
+            else {
+                Write-Host "No HotPocket devkit executable file was found."
+            }
+        }
+        catch { "An error occurred while updating." }
     }
     else {
         Write-Host "command: $($Command) (cluster: $($Cluster))"
@@ -229,17 +257,6 @@ if ($Command) {
         }
         elseif ($Command -eq "logs" -OR $Command -eq "start" -OR $Command -eq "stop") {
             DevKitContainer -Mode "run" -AutoRemove -MountSock -EntryPoint "cluster" -Cmd "$($args)"
-        }
-        elseif ($Command -eq "update") {
-            try { 
-                if (Test-Path -Path "$($ExePath)\hpdevkit.exe") {
-                    UpdateHPDevKit  
-                }
-                else {
-                    Write-Host "No HotPocket devkit executable file was found."         
-                }                    
-            }
-            catch { "An error occurred while updating." }
         }
         else {
             Write-Host $CommandError
