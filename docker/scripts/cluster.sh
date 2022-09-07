@@ -31,6 +31,12 @@ function validate_node_num_arg {
     return 0
 }
 
+function validate_port {
+    ! [ "$1" -eq "$1" ] 2> /dev/null && echo "Port must be a number." && return 1
+    ([ $1 -lt 1 ] || [ $1 -gt 65535 ]) && echo "Port number must be 1 through 65535." && return 1
+    return 0
+}
+
 function contract_dir_mount_path {
     echo "$volume_mount/node$1"
 }
@@ -165,6 +171,13 @@ function create_cluster {
     docker volume create $volume
     docker network create $network
 
+    # Pull the docker image if not exists.
+    if ! docker image inspect $hotpocket_image &>/dev/null;
+    then
+        echo "Pulling the docker image $hotpocket_image"
+        docker pull $hotpocket_image
+    fi
+
     for ((i=1; i<=$size; i++));
     do
         create_instance $i &
@@ -239,10 +252,17 @@ function sync_contract_bundle {
     wait
 }
 
+function validate_port_begin {
+    ! validate_port $user_port_begin && echo "Invalid user port begin." && exit 1
+    ! validate_port $peer_port_begin && echo "Invalid peer port begin." && exit 1
+}
+
 if [ $command = "create" ]; then
     ! validate_node_num_arg $cluster_size && echo "Invalid cluster size." && exit 1
+    validate_port_begin
     create_cluster $cluster_size
 elif [ $command = "bindmesh" ]; then
+    validate_port_begin
     bind_mesh
 elif [ $command = "destroy" ]; then
     destroy_cluster
