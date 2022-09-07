@@ -20,7 +20,7 @@ codegenContainerName=$globalPrefix\_codegen
 configOverridesFile="hp.cfg.override"
 codegenOutputDir="/codegen-output"
 
-cloudStorage="https://stevernode.blob.core.windows.net/evernode-dev-bb7ec110-f72e-430e-b297-9210468a4cbb"
+cloudStorage="https://stevernode.blob.core.windows.net/evernode-beta"
 bashScriptUrl="$cloudStorage/$globalPrefix-linux/$globalPrefix.sh"
 hpdevkitDataDir="/etc/$globalPrefix"
 versionTimestampFile="$hpdevkitDataDir/linuxlauncherscript.timestamp"
