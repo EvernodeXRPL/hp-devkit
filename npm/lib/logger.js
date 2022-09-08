@@ -41,7 +41,7 @@ function error(...args) {
 }
 
 function log(...args) {
-    console.log(args);
+    console.log(...args);
 }
 
 module.exports = {

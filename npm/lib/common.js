@@ -1,6 +1,6 @@
 const appenv = require("../appenv")
 const { exec } = require("./child-proc")
-const { info } = require("./logger")
+const { info, log } = require("./logger")
 
 const GLOBAL_PREFIX = "hpdevkit"
 const VERSION = "0.1.0"
@@ -18,7 +18,7 @@ const CONSTANTS = {
 }
 
 function runOnContainer(name, detached, autoRemove, mountStock, mountVolume, entryCmd, entryPoint) {
-    command = `docker run`
+    command = `docker run -it`
     if (name)
         command += ` --name ${name}`
 
@@ -42,12 +42,13 @@ function runOnContainer(name, detached, autoRemove, mountStock, mountVolume, ent
     command += ` -e CLUSTER=${appenv.cluster} -e CLUSTER_SIZE=${appenv.clusterSize} -e DEFAULT_NODE=${appenv.defaultNode} -e VOLUME=${CONSTANTS.volume} -e NETWORK=${CONSTANTS.network}`
     command += ` -e CONTAINER_PREFIX=${CONSTANTS.containerPrefix} -e VOLUME_MOUNT=${CONSTANTS.volumeMount} -e BUNDLE_MOUNT=${CONSTANTS.bundleMount} -e HOTPOCKET_IMAGE=${appenv.instanceImage}`
     command += ` -e CONFIG_OVERRIDES_FILE=${CONSTANTS.confOverrideFile} -e CODEGEN_OUTPUT=${CONSTANTS.codegenOutputDir}`
+    command += ` -e HP_USER_PORT_BEGIN=${appenv.hpUserPortBegin} -e HP_PEER_PORT_BEGIN=${appenv.hpPeerPortBegin}`
 
     command += ` ${appenv.devkitImage}`
 
     if (entryCmd) {
         if (entryPoint)
-            command += ` '${entryCmd}'`
+            command += ` ${entryCmd}`
         else
             command += ` -c '${entryCmd}'`
     }
@@ -57,14 +58,14 @@ function runOnContainer(name, detached, autoRemove, mountStock, mountVolume, ent
 
 function executeOnContainer(name, cmd) {
     if (name)
-        exec(`docker exec ${name}  /bin/bash -c '${cmd}'`)
+        exec(`docker exec ${name}  /bin/bash -c '${cmd}'`, true)
 }
 
 function initializeDeploymentCluster() {
     const res = exec(`docker inspect ${CONSTANTS.deploymentContainerName} &>/dev/null`)
     const resJson = JSON.parse(res.toString())
     if (!resJson || !resJson.length) {
-        info("Initializing deployment cluster")
+        log("Initializing deployment cluster")
 
         // Stop cluster if running. Create cluster if not exists.
         runOnContainer(CONSTANTS.deploymentContainerName, null, true, true, null, 'cluster stop ; cluster create', null)
@@ -77,8 +78,16 @@ function initializeDeploymentCluster() {
     }
 }
 
+function teardownDeploymentCluster() {
+    exec(`docker stop ${CONSTANTS.deploymentContainerName} 2>/dev/null`)
+    exec(`docker rm ${CONSTANTS.deploymentContainerName} 2>/dev/null`)
+    runOnContainer(null, null, true, true, null, "cluster stop ; cluster destroy", null)
+}
+
 module.exports = {
     runOnContainer,
     executeOnContainer,
     initializeDeploymentCluster,
-    CONSTANTS }
+    teardownDeploymentCluster,
+    CONSTANTS
+}

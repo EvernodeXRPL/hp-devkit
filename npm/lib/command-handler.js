@@ -1,11 +1,11 @@
 const fs = require('fs');
 const appenv = require('../appenv');
 const { exec } = require('./child-proc');
-const { CONSTANTS, initializeDeploymentCluster, runOnContainer, executeOnContainer } = require('./common');
-const { success, error, info } = require('./logger');
+const { CONSTANTS, initializeDeploymentCluster, runOnContainer, executeOnContainer, teardownDeploymentCluster } = require('./common');
+const { success, error, info, log } = require('./logger');
 
 function codeGen(platform, apptype, projName) {
-    info("Code generator")
+    log("Code generator")
 
     if (fs.existsSync(projName)) {
         error(`Directory '${projName}' already exists.`)
@@ -14,19 +14,21 @@ function codeGen(platform, apptype, projName) {
 
     try {
         runOnContainer(CONSTANTS.codegenContainerName, null, null, null, null, `${platform} ${apptype} ${projName}`, 'codegen')
-        exec(`docker cp ${CONSTANTS.codegenContainerName}:${CONSTANTS.codegenOutputDir} ./${projName}`);
+        exec(`docker cp ${CONSTANTS.codegenContainerName}:${CONSTANTS.codegenOutputDir} ./${projName}`, false, true);
         success(`Project '${projName}' created.`)
-        exec(`docker rm ${CONSTANTS.codegenContainerName} &>/dev/null`)
     }
     catch (e) {
         // console.log(e);
         error(`Project '${projName}' generation failed.`)
         return -1
     }
+    finally {
+        exec(`docker rm ${CONSTANTS.codegenContainerName} &>/dev/null`)
+    }
 }
 
 function deploy(contractPath) {
-    info(`command: deploy (cluster: ${appenv.cluster})`)
+    log(`command: deploy (cluster: ${appenv.cluster})`)
 
     initializeDeploymentCluster();
 
@@ -36,18 +38,46 @@ function deploy(contractPath) {
         `mkdir -p ${CONSTANTS.bundleMount} && rm -rf ${CONSTANTS.bundleMount}/* ${CONSTANTS.bundleMount}/.??*`
 
     executeOnContainer(CONSTANTS.deploymentContainerName, prepareBundleDir)
-    exec(`docker cp "${contractPath}" "${CONSTANTS.deploymentContainerName}:${CONSTANTS.bundleMount}`)
+    exec(`docker cp "${contractPath}" "${CONSTANTS.deploymentContainerName}:${CONSTANTS.bundleMount}"`)
 
     // Sync contract bundle to all instance directories in the cluster.
     executeOnContainer(CONSTANTS.deploymentContainerName, 'cluster stop ; cluster sync ; cluster start')
 
     if (appenv.defaultNode > 0) {
-        info("Streaming logs of node $defaultNode:")
+        info(`Streaming logs of node ${appenv.defaultNode}:`)
         executeOnContainer(CONSTANTS.deploymentContainerName, `cluster logs ${appenv.defaultNode}`)
     }
 }
 
+function clean() {
+    log(`command: clean (cluster: ${appenv.cluster})`)
+
+    teardownDeploymentCluster();
+}
+
+function logs(nodeNumber) {
+    log(`command: logs (cluster: ${appenv.cluster})`)
+
+    runOnContainer(null, null, true, true, null, `logs ${nodeNumber}`, 'cluster')
+}
+
+function start(nodeNumber) {
+    log(`command: start (cluster: ${appenv.cluster})`)
+
+    runOnContainer(null, null, true, true, null, `start ${nodeNumber}`, 'cluster');
+}
+
+function stop(nodeNumber) {
+    log(`command: stop (cluster: ${appenv.cluster})`)
+
+    runOnContainer(null, null, true, true, null, `stop ${nodeNumber}`, 'cluster')
+}
+
 module.exports = {
     codeGen,
-    deploy
+    deploy,
+    clean,
+    logs,
+    start,
+    stop
 }
