@@ -3,10 +3,12 @@ globalPrefix="hpdevkit"
 version="0.1.0"
 
 cluster="default"
-clusterSize=$([ -z $HP_CLUSTER_SIZE ] && echo 1 || echo "$HP_CLUSTER_SIZE")
+clusterSize=$([ -z $HP_CLUSTER_SIZE ] && echo 3 || echo "$HP_CLUSTER_SIZE")
 defaultNode=$([ -z $HP_DEFAULT_NODE ] && echo 1 || echo "$HP_DEFAULT_NODE")
 devkitImage=$([ -z $HP_DEVKIT_IMAGE ] && echo "evernodedev/hpdevkit" || echo "$HP_DEVKIT_IMAGE")
 instanceImage=$([ -z $HP_INSTANCE_IMAGE ] && echo "evernodedev/hotpocket:latest-ubt.20.04-njs.16" || echo "$HP_INSTANCE_IMAGE")
+hpUserPortBegin=$([ -z $HP_USER_PORT_BEGIN ] && echo 8081 || echo "$HP_USER_PORT_BEGIN")
+hpPeerPortBegin=$([ -z $HP_PEER_PORT_BEGIN ] && echo 22861 || echo "$HP_PEER_PORT_BEGIN")
 
 volumeMount=/$globalPrefix\_vol
 volume=$globalPrefix\_$cluster\_vol
@@ -18,7 +20,7 @@ codegenContainerName=$globalPrefix\_codegen
 configOverridesFile="hp.cfg.override"
 codegenOutputDir="/codegen-output"
 
-cloudStorage="https://stevernode.blob.core.windows.net/evernode-beta"
+cloudStorage="https://stevernode.blob.core.windows.net/evernode-dev-bb7ec110-f72e-430e-b297-9210468a4cbb"
 bashScriptUrl="$cloudStorage/$globalPrefix-linux/$globalPrefix.sh"
 hpdevkitDataDir="/etc/$globalPrefix"
 versionTimestampFile="$hpdevkitDataDir/linuxlauncherscript.timestamp"
@@ -52,9 +54,14 @@ function devKitContainer() {
         command+=" --entrypoint /bin/bash"
     fi
 
+    if [ ! -z "$RESTARTPOLICY" ]; then
+        command+=" --restart $RESTARTPOLICY"
+    fi
+
     command+=" -e CLUSTER=$cluster -e CLUSTER_SIZE=$clusterSize -e DEFAULT_NODE=$defaultNode -e VOLUME=$volume -e NETWORK=$network"
     command+=" -e CONTAINER_PREFIX=$containerPrefix -e VOLUME_MOUNT=$volumeMount -e BUNDLE_MOUNT=$bundleMount -e HOTPOCKET_IMAGE=$instanceImage"
     command+=" -e CONFIG_OVERRIDES_FILE=$configOverridesFile -e CODEGEN_OUTPUT=$codegenOutputDir"
+    command+=" -e HP_USER_PORT_BEGIN=$hpUserPortBegin -e HP_PEER_PORT_BEGIN=$hpPeerPortBegin"
 
     command+=" $devkitImage"
 
@@ -93,7 +100,7 @@ function initializeDeploymentCluster() {
         AUTOREMOVE="true" MOUNTSOCK="true" CMD="cluster stop ; cluster create" devKitContainer run
 
         # Spin up management container.
-        NAME="$deploymentContainerName" DETACHED="true" MOUNTSOCK="true" MOUNTVOLUME="true" devKitContainer run
+        NAME="$deploymentContainerName" DETACHED="true" MOUNTSOCK="true" MOUNTVOLUME="true" RESTARTPOLICY="unless-stopped" devKitContainer run
 
         # Bind the instance mesh network config together.
         CONTAINERNAME="$deploymentContainerName" executeInContainer "cluster bindmesh"
@@ -156,6 +163,17 @@ function codeGenerator() {
 
 }
 
+function removeLauncher() {
+    rm $scriptBinPath
+}
+
+function createLauncher() {
+    # Copying the current script file to the bin directory
+    ! curl -fsSL $bashScriptUrl --output $scriptBinPath &>/dev/null && echo "Error in creating launcher." && return 1
+    ! chmod +x $scriptBinPath &>/dev/null && echo "Error in changing permission for the launcher." && return 1
+    return 0
+}
+
 function updateDevKit() {
     local latestVersionTimestamp=$(online_version_timestamp $bashScriptUrl)
     [ -z "$latestVersionTimestamp" ] && echo "Online launcher not found." && exit 1
@@ -169,10 +187,10 @@ function updateDevKit() {
             echo "HotPocket devkit is already upto date."
         else
             echo "Found a new version of HotPocket devkit."
-            ! rm $scriptBinPath && echo " Removing previous launcher failed"
-            ! curl -fsSL $bashScriptUrl --output $scriptBinPath 2>&1 && echo "Error in downloading the new launcher."
-            ! chmod +x $scriptBinPath &>/dev/null && echo "Error in changing permission for the launcher."
+            ! removeLauncher && echo "Removing the launcher failed."
+            ! createLauncher && echo "Launcher creation failed."
             echo $latestVersionTimestamp >$versionTimestampFile
+            echo "HotPocket devkit update completed !!"
         fi
     fi
 
@@ -180,8 +198,20 @@ function updateDevKit() {
     docker pull $devkitImage &>/dev/null
     docker pull $instanceImage &>/dev/null
 
-    echo "Update Completed."
+    # Clear if there's already deployed cluster since they are outdated now.
+    if docker inspect $deploymentContainerName &>/dev/null; then
+        echo "Cleaning the deployed contracts..."
+        teardownDeploymentCluster
+    fi
+
+    echo "Update Completed !!"
     echo "NOTE: You need to re-deploy your contracts to make the new changes effective."
+}
+
+function checkExistance() {
+    command -v hpdevkit &>/dev/null && [ -f $scriptBinPath ] && [ -d $hpdevkitDataDir ] &&
+        echo -e "hpdevkit is already installed on your host. \nUse the 'hpdevkit' start your local HotPocket testing." &&
+        exit 1
 }
 
 function online_version_timestamp() {
@@ -190,13 +220,13 @@ function online_version_timestamp() {
 }
 
 function install() {
+    checkExistance
+
     if [[ ! -d $hpdevkitDataDir ]]; then
         ! mkdir $hpdevkitDataDir && echo "Data path creation error." && exit 1
     fi
 
-    # Copying the current script file to the bin directory
-    ! curl -fsSL $bashScriptUrl --output $scriptBinPath 2>/dev/null && echo "Binary copying to '/usr/bin' failed." && exit 1
-    ! chmod +x $scriptBinPath 2>&1 && echo "Error in changing permission for the launcher." && exit 1
+    ! createLauncher && echo "Launcher creation failed."
 
     # Creating timestamp file
     local latestVersionTimestamp=$(online_version_timestamp $bashScriptUrl)
@@ -204,14 +234,29 @@ function install() {
 }
 
 function uninstall() {
-    if [[ -d $hpdevkitDataDir ]]; then
-        rm $hpdevkitDataDir/* 2>/dev/null
-        rm -d $hpdevkitDataDir
+    # Remove deployment cluster if exist.
+    if docker inspect $deploymentContainerName &>/dev/null; then
+        echo "Cleaning the deployed contracts..."
+        teardownDeploymentCluster
     fi
 
-    if [[ -f "/usr/bin/hpdevkit" ]]; then
-        rm "$scriptBinPath"
+    # Remove docker images if exist.
+    if docker image inspect $devkitImage &>/dev/null; then
+        echo "Removing devkit docker image..."
+        docker image rm $devkitImage &>/dev/null
     fi
+    if docker image inspect $instanceImage &>/dev/null; then
+        echo "Removing instance docker image..."
+        docker image rm $instanceImage &>/dev/null
+    fi
+
+    echo "Removing binaries..."
+    if [[ -d $hpdevkitDataDir ]]; then
+        rm -r $hpdevkitDataDir
+    fi
+
+    echo "Removing the launcher..."
+    removeLauncher
 }
 
 function is_user_root() {

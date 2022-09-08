@@ -10,6 +10,8 @@ volume_mount=$VOLUME_MOUNT
 bundle_mount=$BUNDLE_MOUNT
 hotpocket_image=$HOTPOCKET_IMAGE
 config_overrides_file=$CONFIG_OVERRIDES_FILE
+user_port_begin=$HP_USER_PORT_BEGIN
+peer_port_begin=$HP_PEER_PORT_BEGIN
 
 if [ "$command" = "create" ] || [ "$command" = "bindmesh" ] || [ "$command" = "destroy" ] || \
     [ "$command" = "start" ] || [ "$command" = "stop" ] || \
@@ -26,6 +28,12 @@ fi
 function validate_node_num_arg {
     ! [ "$1" -eq "$1" ] 2> /dev/null && echo "Arg must be a number." && return 1
     [ $1 -le 0 ] && echo "Arg must be 1 or higher." && return 1
+    return 0
+}
+
+function validate_port {
+    ! [ "$1" -eq "$1" ] 2> /dev/null && echo "Port must be a number." && return 1
+    ([ $1 -lt 1 ] || [ $1 -gt 65535 ]) && echo "Port number must be 1 through 65535." && return 1
     return 0
 }
 
@@ -72,8 +80,8 @@ function create_instance {
     # Create contract instance directory.
     docker run --rm --mount type=volume,src=$volume,dst=$volume_mount --rm $hotpocket_image new $volume_mount/node$node
 
-    let peer_port=22860+$node
-    let user_port=8080+$node
+    let peer_port=$(($peer_port_begin + $node - 1))
+    let user_port=$(($user_port_begin + $node - 1))
 
     # Create container for hotpocket instance.
     local container_name="${container_prefix}_$node"
@@ -119,7 +127,7 @@ function joinarr {
 # Update all instances hotpocket configs so they connect to each other as a cluster.
 function bind_mesh {
     local instance_count=$(get_container_count)
-    
+
     # Collect pubkeys and peers of all nodes.
     local all_pubkeys
     local all_peers
@@ -133,8 +141,8 @@ function bind_mesh {
         [ $i -eq 1 ] && contract_id=$(jq ".contract.id" $cfg_file)
 
         # Assign user and peer ports in incrementing order.
-        let peer_port=22860+$i
-        let user_port=8080+$i
+        let peer_port=$(($peer_port_begin + $i - 1))
+        let user_port=$(($user_port_begin + $i - 1))
 
         jq ".contract.id=$contract_id | .contract.roundtime=2000 | .mesh.port=$peer_port | .user.port=$user_port" $cfg_file > $cfg_file.tmp \
             && mv $cfg_file.tmp $cfg_file
@@ -162,6 +170,13 @@ function create_cluster {
     echo "Creating '$cluster' cluster of size $size"
     docker volume create $volume
     docker network create $network
+
+    # Pull the docker image if not exists.
+    if ! docker image inspect $hotpocket_image &>/dev/null;
+    then
+        echo "Pulling the docker image $hotpocket_image"
+        docker pull $hotpocket_image
+    fi
 
     for ((i=1; i<=$size; i++));
     do
@@ -237,10 +252,17 @@ function sync_contract_bundle {
     wait
 }
 
+function validate_port_begin {
+    ! validate_port $user_port_begin && echo "Invalid user port begin." && exit 1
+    ! validate_port $peer_port_begin && echo "Invalid peer port begin." && exit 1
+}
+
 if [ $command = "create" ]; then
     ! validate_node_num_arg $cluster_size && echo "Invalid cluster size." && exit 1
+    validate_port_begin
     create_cluster $cluster_size
 elif [ $command = "bindmesh" ]; then
+    validate_port_begin
     bind_mesh
 elif [ $command = "destroy" ]; then
     destroy_cluster
