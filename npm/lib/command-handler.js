@@ -1,8 +1,14 @@
 const fs = require('fs');
 const appenv = require('../appenv');
 const { exec } = require('./child-proc');
-const { CONSTANTS, initializeDeploymentCluster, runOnContainer, executeOnContainer, teardownDeploymentCluster } = require('./common');
+const { CONSTANTS, initializeDeploymentCluster, runOnContainer, executeOnContainer, teardownDeploymentCluster, isExists } = require('./common');
 const { success, error, info, log } = require('./logger');
+
+function version() {
+    log(`command: version`)
+
+    exec(`npm list -g ${CONSTANTS.npmPackageName} --depth=0`, true)
+}
 
 function codeGen(platform, apptype, projName) {
     log("Code generator")
@@ -73,11 +79,57 @@ function stop(nodeNumber) {
     runOnContainer(null, null, true, true, null, `stop ${nodeNumber}`, 'cluster')
 }
 
+function update() {
+    log(`command: update`)
+
+    exec(`npm update -g ${CONSTANTS.npmPackageName}`)
+
+    info('Updating docker images...')
+    exec(`docker pull ${appenv.devkitImage} &>/dev/null && docker pull ${appenv.instanceImage} &>/dev/null`)
+
+    // Clear if there's already deployed cluster since they are outdated now.
+    if (isExists(CONSTANTS.deploymentContainerName)) {
+        info('Cleaning the deployed contracts...')
+        teardownDeploymentCluster();
+    }
+
+    success('Update Completed !!')
+    info('NOTE: You need to re-deploy your contracts to make the new changes effective.')
+}
+
+function uninstall() {
+    log(`command: uninstall`)
+
+    // Remove deployment cluster if exist.
+    if (isExists(CONSTANTS.deploymentContainerName)) {
+        info('Cleaning the deployed contracts...')
+        teardownDeploymentCluster();
+    }
+
+    // Remove docker images if exist.
+    if (isExists(appenv.devkitImage, 'image')) {
+        info('Removing devkit docker image...')
+        exec(`docker image rm ${appenv.devkitImage} &>/dev/null`)
+    }
+
+    if (isExists(appenv.instanceImage, 'image')) {
+        info('Removing instance docker image...')
+        exec(`docker image rm ${appenv.instanceImage} &>/dev/null`)
+    }
+
+    exec(`npm uninstall -g ${CONSTANTS.npmPackageName}`)
+
+    success('Uninstalled hpdevkit !!')
+}
+
 module.exports = {
+    version,
     codeGen,
     deploy,
     clean,
     logs,
     start,
-    stop
+    stop,
+    update,
+    uninstall
 }

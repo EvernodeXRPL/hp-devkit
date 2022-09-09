@@ -10,8 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "commander": "^9.4.0",
-    "shelljs": "^0.8.5"
+    "commander": "9.4.0"
   },
   "bin": {
     "hpdevkit": "./index.js"

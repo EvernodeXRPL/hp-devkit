@@ -1,11 +1,12 @@
 const appenv = require("../appenv")
 const { exec } = require("./child-proc")
-const { info, log } = require("./logger")
+const { log } = require("./logger")
 
 const GLOBAL_PREFIX = "hpdevkit"
 const VERSION = "0.1.0"
 
 const CONSTANTS = {
+    npmPackageName: `hp-devkit`,
     volumeMount: `/${GLOBAL_PREFIX}_vol`,
     volume: `${GLOBAL_PREFIX}_${appenv.cluster}_vol`,
     network: `${GLOBAL_PREFIX}_${appenv.cluster}_net`,
@@ -61,10 +62,16 @@ function executeOnContainer(name, cmd) {
         exec(`docker exec ${name}  /bin/bash -c '${cmd}'`, true)
 }
 
-function initializeDeploymentCluster() {
-    const res = exec(`docker inspect ${CONSTANTS.deploymentContainerName} &>/dev/null`)
+function isExists(name, type = null) {
+    const res = exec(`docker ${type === 'image' ? 'image ' : ''}inspect ${name} 2>/dev/null`)
+    if (!res)
+        return false;
     const resJson = JSON.parse(res.toString())
-    if (!resJson || !resJson.length) {
+    return resJson && resJson.length
+}
+
+function initializeDeploymentCluster() {
+    if (!isExists(CONSTANTS.deploymentContainerName)) {
         log("Initializing deployment cluster")
 
         // Stop cluster if running. Create cluster if not exists.
@@ -79,14 +86,14 @@ function initializeDeploymentCluster() {
 }
 
 function teardownDeploymentCluster() {
-    exec(`docker stop ${CONSTANTS.deploymentContainerName} 2>/dev/null`)
-    exec(`docker rm ${CONSTANTS.deploymentContainerName} 2>/dev/null`)
+    exec(`docker stop ${CONSTANTS.deploymentContainerName} 2>/dev/null && docker rm ${CONSTANTS.deploymentContainerName} 2>/dev/null`)
     runOnContainer(null, null, true, true, null, "cluster stop ; cluster destroy", null)
 }
 
 module.exports = {
     runOnContainer,
     executeOnContainer,
+    isExists,
     initializeDeploymentCluster,
     teardownDeploymentCluster,
     CONSTANTS

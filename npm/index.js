@@ -1,7 +1,12 @@
 #! /usr/bin/env node
 
 const { program } = require('commander')
-const { codeGen, deploy, clean, logs, start, stop } = require('./lib/command-handler')
+const { version, codeGen, deploy, clean, logs, start, stop, update, uninstall } = require('./lib/command-handler')
+
+program
+    .command('version')
+    .description('hpdevkit version')
+    .action(version)
 
 program
     .command('gen <platform> <app-type> <project-name>')
@@ -32,5 +37,15 @@ program
     .command('stop <node-number>')
     .description('hpdevkit stop <node-number>')
     .action(stop)
+
+program
+    .command('update')
+    .description('hpdevkit stop <node-number>')
+    .action(update)
+
+program
+    .command('uninstall')
+    .description('uninstall')
+    .action(uninstall)
 
 program.parse()
