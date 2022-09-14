@@ -2,16 +2,16 @@ const fs = require('fs');
 const appenv = require('../appenv');
 const { exec } = require('./child-proc');
 const { CONSTANTS, initializeDeploymentCluster, runOnContainer, executeOnContainer, teardownDeploymentCluster, isExists } = require('./common');
-const { success, error, info, log } = require('./logger');
+const { success, error, info, warn } = require('./logger');
 
 function version() {
-    log(`command: version`)
+    info(`command: version`)
 
     exec(`npm list -g ${CONSTANTS.npmPackageName} --depth=0`, true)
 }
 
 function codeGen(platform, apptype, projName) {
-    log("Code generator")
+    info("Code generator")
 
     if (fs.existsSync(projName)) {
         error(`Directory '${projName}' already exists.`)
@@ -24,7 +24,6 @@ function codeGen(platform, apptype, projName) {
         success(`Project '${projName}' created.`)
     }
     catch (e) {
-        // console.log(e);
         error(`Project '${projName}' generation failed.`)
         return -1
     }
@@ -34,7 +33,7 @@ function codeGen(platform, apptype, projName) {
 }
 
 function deploy(contractPath) {
-    log(`command: deploy (cluster: ${appenv.cluster})`)
+    info(`command: deploy (cluster: ${appenv.cluster})`)
 
     initializeDeploymentCluster();
 
@@ -56,31 +55,31 @@ function deploy(contractPath) {
 }
 
 function clean() {
-    log(`command: clean (cluster: ${appenv.cluster})`)
+    info(`command: clean (cluster: ${appenv.cluster})`)
 
     teardownDeploymentCluster();
 }
 
 function logs(nodeNumber) {
-    log(`command: logs (cluster: ${appenv.cluster})`)
+    info(`command: logs (cluster: ${appenv.cluster})`)
 
     runOnContainer(null, null, true, true, null, `logs ${nodeNumber}`, 'cluster')
 }
 
 function start(nodeNumber) {
-    log(`command: start (cluster: ${appenv.cluster})`)
+    info(`command: start (cluster: ${appenv.cluster})`)
 
     runOnContainer(null, null, true, true, null, `start ${nodeNumber}`, 'cluster');
 }
 
 function stop(nodeNumber) {
-    log(`command: stop (cluster: ${appenv.cluster})`)
+    info(`command: stop (cluster: ${appenv.cluster})`)
 
     runOnContainer(null, null, true, true, null, `stop ${nodeNumber}`, 'cluster')
 }
 
 function update() {
-    log(`command: update`)
+    info(`command: update`)
 
     exec(`npm update -g ${CONSTANTS.npmPackageName}`)
 
@@ -94,11 +93,11 @@ function update() {
     }
 
     success('Update Completed !!')
-    info('NOTE: You need to re-deploy your contracts to make the new changes effective.')
+    warn('NOTE: You need to re-deploy your contracts to make the new changes effective.')
 }
 
 function uninstall() {
-    log(`command: uninstall`)
+    info(`command: uninstall`)
 
     // Remove deployment cluster if exist.
     if (isExists(CONSTANTS.deploymentContainerName)) {

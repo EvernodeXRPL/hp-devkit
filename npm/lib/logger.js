@@ -25,19 +25,19 @@ BgCyan = "\x1b[46m"
 BgWhite = "\x1b[47m"
 
 function success(...args) {
-    console.log(FgGreen, ...args);
+    console.log(`${FgGreen}%s${Reset}`, ...args);
 }
 
 function info(...args) {
-    console.log(FgBlue, ...args);
+    console.log(`${FgBlue}%s${Reset}`, ...args);
 }
 
 function warn(...args) {
-    console.log(FgYellow, ...args);
+    console.log(`${FgYellow}%s${Reset}`, ...args);
 }
 
 function error(...args) {
-    console.log(FgRed, ...args);
+    console.log(`${FgRed}%s${Reset}`, ...args);
 }
 
 function log(...args) {
