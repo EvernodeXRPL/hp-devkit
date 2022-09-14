@@ -1,9 +1,9 @@
-const appenv = require("../appenv")
-const { exec } = require("./child-proc")
-const { log } = require("./logger")
+const appenv = require("../appenv");
+const { exec } = require("./child-proc");
+const { log } = require("./logger");
 
-const GLOBAL_PREFIX = "hpdevkit"
-const VERSION = "0.1.0"
+const GLOBAL_PREFIX = "hpdevkit";
+const VERSION = "0.1.0";
 
 const CONSTANTS = {
     npmPackageName: `hp-devkit`,
@@ -16,42 +16,42 @@ const CONSTANTS = {
     confOverrideFile: "hp.cfg.override",
     codegenOutputDir: "/codegen-output",
     codegenContainerName: `${GLOBAL_PREFIX}_codegen`
-}
+};
 
 function runOnContainer(name, detached, autoRemove, mountStock, mountVolume, entryCmd, entryPoint) {
-    command = `docker run -it`
+    command = `docker run -it`;
     if (name)
-        command += ` --name ${name}`
+        command += ` --name ${name}`;
 
     if (detached)
-        command += " -d"
+        command += " -d";
 
     if (autoRemove)
-        command += " --rm"
+        command += " --rm";
 
     if (mountStock)
-        command += " --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock"
+        command += " --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock";
 
     if (mountVolume)
-        command += ` --mount type=volume,src=${CONSTANTS.volume},dst=${CONSTANTS.volumeMount}`
+        command += ` --mount type=volume,src=${CONSTANTS.volume},dst=${CONSTANTS.volumeMount}`;
 
     if (entryPoint)
-        command += ` --entrypoint ${entryPoint}`
+        command += ` --entrypoint ${entryPoint}`;
     else
-        command += " --entrypoint /bin/bash"
+        command += " --entrypoint /bin/bash";
 
-    command += ` -e CLUSTER=${appenv.cluster} -e CLUSTER_SIZE=${appenv.clusterSize} -e DEFAULT_NODE=${appenv.defaultNode} -e VOLUME=${CONSTANTS.volume} -e NETWORK=${CONSTANTS.network}`
-    command += ` -e CONTAINER_PREFIX=${CONSTANTS.containerPrefix} -e VOLUME_MOUNT=${CONSTANTS.volumeMount} -e BUNDLE_MOUNT=${CONSTANTS.bundleMount} -e HOTPOCKET_IMAGE=${appenv.instanceImage}`
-    command += ` -e CONFIG_OVERRIDES_FILE=${CONSTANTS.confOverrideFile} -e CODEGEN_OUTPUT=${CONSTANTS.codegenOutputDir}`
-    command += ` -e HP_USER_PORT_BEGIN=${appenv.hpUserPortBegin} -e HP_PEER_PORT_BEGIN=${appenv.hpPeerPortBegin}`
+    command += ` -e CLUSTER=${appenv.cluster} -e CLUSTER_SIZE=${appenv.clusterSize} -e DEFAULT_NODE=${appenv.defaultNode} -e VOLUME=${CONSTANTS.volume} -e NETWORK=${CONSTANTS.network}`;
+    command += ` -e CONTAINER_PREFIX=${CONSTANTS.containerPrefix} -e VOLUME_MOUNT=${CONSTANTS.volumeMount} -e BUNDLE_MOUNT=${CONSTANTS.bundleMount} -e HOTPOCKET_IMAGE=${appenv.instanceImage}`;
+    command += ` -e CONFIG_OVERRIDES_FILE=${CONSTANTS.confOverrideFile} -e CODEGEN_OUTPUT=${CONSTANTS.codegenOutputDir}`;
+    command += ` -e HP_USER_PORT_BEGIN=${appenv.hpUserPortBegin} -e HP_PEER_PORT_BEGIN=${appenv.hpPeerPortBegin}`;
 
-    command += ` ${appenv.devkitImage}`
+    command += ` ${appenv.devkitImage}`;
 
     if (entryCmd) {
         if (entryPoint)
-            command += ` ${entryCmd}`
+            command += ` ${entryCmd}`;
         else
-            command += ` -c '${entryCmd}'`
+            command += ` -c '${entryCmd}'`;
     }
 
     exec(command, true);
@@ -59,35 +59,40 @@ function runOnContainer(name, detached, autoRemove, mountStock, mountVolume, ent
 
 function executeOnContainer(name, cmd) {
     if (name)
-        exec(`docker exec ${name}  /bin/bash -c '${cmd}'`, true)
+        exec(`docker exec ${name}  /bin/bash -c '${cmd}'`, true);
 }
 
 function isExists(name, type = null) {
-    const res = exec(`docker ${type === 'image' ? 'image ' : ''}inspect ${name} 2>/dev/null`)
-    if (!res)
+    try {
+        const res = exec(`docker ${type === 'image' ? 'image ' : ''}inspect ${name}`);
+        if (!res)
+            return false;
+        const resJson = JSON.parse(res.toString());
+        return resJson && resJson.length;
+    }
+    catch {
         return false;
-    const resJson = JSON.parse(res.toString())
-    return resJson && resJson.length
+    }
 }
 
 function initializeDeploymentCluster() {
     if (!isExists(CONSTANTS.deploymentContainerName)) {
-        log("Initializing deployment cluster")
+        log("Initializing deployment cluster");
 
         // Stop cluster if running. Create cluster if not exists.
-        runOnContainer(CONSTANTS.deploymentContainerName, null, true, true, null, 'cluster stop ; cluster create', null)
+        runOnContainer(CONSTANTS.deploymentContainerName, null, true, true, null, 'cluster stop ; cluster create', null);
 
         // Spin up management container.
-        runOnContainer(CONSTANTS.deploymentContainerName, true, false, true, true, null, null)
+        runOnContainer(CONSTANTS.deploymentContainerName, true, false, true, true, null, null);
 
         // Bind the instance mesh network config together.
-        executeOnContainer(CONSTANTS.deploymentContainerName, 'cluster bindmesh')
+        executeOnContainer(CONSTANTS.deploymentContainerName, 'cluster bindmesh');
     }
 }
 
 function teardownDeploymentCluster() {
-    exec(`docker stop ${CONSTANTS.deploymentContainerName} 2>/dev/null && docker rm ${CONSTANTS.deploymentContainerName} 2>/dev/null`)
-    runOnContainer(null, null, true, true, null, "cluster stop ; cluster destroy", null)
+    exec(`docker stop ${CONSTANTS.deploymentContainerName} && docker rm ${CONSTANTS.deploymentContainerName}`);
+    runOnContainer(null, null, true, true, null, "cluster stop ; cluster destroy", null);
 }
 
 module.exports = {
@@ -97,4 +102,4 @@ module.exports = {
     initializeDeploymentCluster,
     teardownDeploymentCluster,
     CONSTANTS
-}
+};

@@ -1,15 +1,9 @@
 const { execSync } = require('child_process');
 
-function exec(commad, showOutput = false, throwError = false) {
-	try {
-		return execSync(commad, showOutput ? { stdio: 'inherit' } : {});
-	}
-	catch (e) {
-		if (throwError)
-			throw e;
-	}
+function exec(commad, streamOut = false) {
+	return execSync(commad, streamOut ? { stdio: 'inherit' } : {stdio : 'pipe' });
 }
 
 module.exports = {
 	exec
-}
+};
