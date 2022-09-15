@@ -18,8 +18,10 @@ function codeGen(platform, apptype, projName) {
         return;
     }
 
+    let containerStarted = false;
     try {
         runOnContainer(CONSTANTS.codegenContainerName, null, null, null, null, `${platform} ${apptype} ${projName}`, 'codegen');
+        containerStarted = true;
         exec(`docker cp ${CONSTANTS.codegenContainerName}:${CONSTANTS.codegenOutputDir} ./${projName}`);
         success(`Project '${projName}' created.`);
     }
@@ -27,7 +29,8 @@ function codeGen(platform, apptype, projName) {
         error(`Project '${projName}' generation failed.`);
     }
     finally {
-        exec(`docker rm ${CONSTANTS.codegenContainerName}`, false);
+        if (containerStarted)
+            exec(`docker rm ${CONSTANTS.codegenContainerName}`, false);
     }
 }
 
@@ -80,50 +83,44 @@ function stop(nodeNumber) {
 function update() {
     info(`command: update`);
 
-    try {
-        exec(`npm update -g ${CONSTANTS.npmPackageName}`, true);
+    exec(`npm update -g ${CONSTANTS.npmPackageName}`, true);
 
-        info('Updating docker images...');
-        exec(`docker pull ${appenv.devkitImage} && docker pull ${appenv.instanceImage}`, true);
+    info('Updating docker images...');
+    exec(`docker pull ${appenv.devkitImage} && docker pull ${appenv.instanceImage}`, true);
 
-        // Clear if there's already deployed cluster since they are outdated now.
-        if (isExists(CONSTANTS.deploymentContainerName)) {
-            info('Cleaning the deployed contracts...');
-            teardownDeploymentCluster();
-        }
-
-        success('Update Completed !!');
-        warn('NOTE: You need to re-deploy your contracts to make the new changes effective.');
+    // Clear if there's already deployed cluster since they are outdated now.
+    if (isExists(CONSTANTS.deploymentContainerName)) {
+        info('Cleaning the deployed contracts...');
+        teardownDeploymentCluster();
     }
-    catch (e) { }
+
+    success('Update Completed !!');
+    warn('NOTE: You need to re-deploy your contracts to make the new changes effective.');
 }
 
 function uninstall() {
     info(`command: uninstall`);
 
-    try {
-        exec(`npm uninstall -g ${CONSTANTS.npmPackageName}`, true);
+    exec(`npm uninstall -g ${CONSTANTS.npmPackageName}`, true);
 
-        // Remove deployment cluster if exist.
-        if (isExists(CONSTANTS.deploymentContainerName)) {
-            info('Cleaning the deployed contracts...');
-            teardownDeploymentCluster();
-        }
-
-        // Remove docker images if exist.
-        if (isExists(appenv.devkitImage, 'image')) {
-            info('Removing devkit docker image...');
-            exec(`docker image rm ${appenv.devkitImage}`, true);
-        }
-
-        if (isExists(appenv.instanceImage, 'image')) {
-            info('Removing instance docker image...');
-            exec(`docker image rm ${appenv.instanceImage}`, true);
-        }
-
-        success('Uninstalled hpdevkit !!');
+    // Remove deployment cluster if exist.
+    if (isExists(CONSTANTS.deploymentContainerName)) {
+        info('Cleaning the deployed contracts...');
+        teardownDeploymentCluster();
     }
-    catch (e) { }
+
+    // Remove docker images if exist.
+    if (isExists(appenv.devkitImage, 'image')) {
+        info('Removing devkit docker image...');
+        exec(`docker image rm ${appenv.devkitImage}`, true);
+    }
+
+    if (isExists(appenv.instanceImage, 'image')) {
+        info('Removing instance docker image...');
+        exec(`docker image rm ${appenv.instanceImage}`, true);
+    }
+
+    success('Uninstalled hpdevkit !!');
 }
 
 module.exports = {

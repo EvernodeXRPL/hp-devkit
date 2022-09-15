@@ -48,4 +48,7 @@ program
     .description('uninstall')
     .action(uninstall);
 
-program.parse();
+try {
+    program.parse();
+}
+catch { }
