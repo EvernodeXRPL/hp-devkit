@@ -24,4 +24,4 @@ Uninstall `hpdevkit` and the supporting docker images and containers.
 hpdevkit update
 ```
 
-_**NOTE:** For Installation, Update and Uninstallation you'll need root privileges for linux platforms, Add `sudo` to above commands._
+_**NOTE:** For Installation, Update and Uninstallation you'll need root privileges for Linux platforms, Add `sudo` to above commands._
