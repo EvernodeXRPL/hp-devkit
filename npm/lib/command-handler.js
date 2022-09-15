@@ -33,10 +33,10 @@ function codeGen(platform, apptype, projName) {
         runOnContainer(CONSTANTS.codegenContainerName, null, null, null, null, `${platform} ${apptype} ${projName}`, 'codegen');
         containerStarted = true;
         exec(`docker cp ${CONSTANTS.codegenContainerName}:${CONSTANTS.codegenOutputDir} ./${projName}`);
-        success(`\nProject '${projName}' created.`);
+        success(`Project '${projName}' created.`);
     }
     catch (e) {
-        error(`\nProject '${projName}' generation failed.`);
+        error(`Project '${projName}' generation failed.`);
     }
     finally {
         if (containerStarted)
