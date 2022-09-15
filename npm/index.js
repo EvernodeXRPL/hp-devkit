@@ -51,4 +51,9 @@ program
 try {
     program.parse();
 }
-catch { }
+catch (e) {
+    // Console outputs will be handled inside command functions.
+    // Log the exception if not a console output.
+    if (!('stdout' in e) && !('stderr' in e))
+        console.error(e);
+}

@@ -6,7 +6,7 @@ const GLOBAL_PREFIX = "hpdevkit";
 const VERSION = "0.1.0";
 
 const CONSTANTS = {
-    npmPackageName: `hp-devkit`,
+    npmPackageName: `hpdevkit`,
     volumeMount: `/${GLOBAL_PREFIX}_vol`,
     volume: `${GLOBAL_PREFIX}_${appenv.cluster}_vol`,
     network: `${GLOBAL_PREFIX}_${appenv.cluster}_net`,
@@ -51,7 +51,7 @@ function runOnContainer(name, detached, autoRemove, mountStock, mountVolume, ent
         if (entryPoint)
             command += ` ${entryCmd}`;
         else
-            command += ` -c '${entryCmd}'`;
+            command += ` -c "${entryCmd}"`;
     }
 
     exec(command, true);
@@ -59,7 +59,7 @@ function runOnContainer(name, detached, autoRemove, mountStock, mountVolume, ent
 
 function executeOnContainer(name, cmd) {
     if (name)
-        exec(`docker exec ${name}  /bin/bash -c '${cmd}'`, true);
+        exec(`docker exec ${name}  /bin/bash -c "${cmd}"`, true);
 }
 
 function isExists(name, type = null) {

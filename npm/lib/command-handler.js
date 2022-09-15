@@ -21,7 +21,7 @@ function version() {
 }
 
 function codeGen(platform, apptype, projName) {
-    info("Code generator");
+    info("Code generator\n");
 
     if (fs.existsSync(projName)) {
         error(`Directory '${projName}' already exists.`);
@@ -55,7 +55,7 @@ function deploy(contractPath) {
         `mkdir -p ${CONSTANTS.bundleMount} && rm -rf ${CONSTANTS.bundleMount}/* ${CONSTANTS.bundleMount}/.??*`;
 
     executeOnContainer(CONSTANTS.deploymentContainerName, prepareBundleDir);
-    exec(`docker cp "${contractPath}" "${CONSTANTS.deploymentContainerName}:${CONSTANTS.bundleMount}"`);
+    exec(`docker cp ${contractPath} "${CONSTANTS.deploymentContainerName}:${CONSTANTS.bundleMount}"`);
 
     // Sync contract bundle to all instance directories in the cluster.
     executeOnContainer(CONSTANTS.deploymentContainerName, 'cluster stop ; cluster sync ; cluster start');
