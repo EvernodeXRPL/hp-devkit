@@ -2,12 +2,22 @@ const fs = require('fs');
 const appenv = require('../appenv');
 const { exec } = require('./child-proc');
 const { CONSTANTS, initializeDeploymentCluster, runOnContainer, executeOnContainer, teardownDeploymentCluster, isExists } = require('./common');
-const { success, error, info, warn } = require('./logger');
+const { success, error, info, warn, log } = require('./logger');
 
 function version() {
     info(`command: version`);
 
-    exec(`npm list -g ${CONSTANTS.npmPackageName} --depth=0`, true);
+    try {
+        const res = exec(`npm -g list ${CONSTANTS.npmPackageName} --depth=0`);
+        const splitted = res.toString().split('\n');
+        if (splitted.length > 1) {
+            success(`\n${splitted[1].split('@')[1]}\n`);
+            return;
+        }
+    }
+    catch (e) { }
+
+    error(`\n${CONSTANTS.npmPackageName} is not installed.`);
 }
 
 function codeGen(platform, apptype, projName) {
@@ -23,10 +33,10 @@ function codeGen(platform, apptype, projName) {
         runOnContainer(CONSTANTS.codegenContainerName, null, null, null, null, `${platform} ${apptype} ${projName}`, 'codegen');
         containerStarted = true;
         exec(`docker cp ${CONSTANTS.codegenContainerName}:${CONSTANTS.codegenOutputDir} ./${projName}`);
-        success(`Project '${projName}' created.`);
+        success(`\nProject '${projName}' created.`);
     }
     catch (e) {
-        error(`Project '${projName}' generation failed.`);
+        error(`\nProject '${projName}' generation failed.`);
     }
     finally {
         if (containerStarted)
@@ -83,44 +93,56 @@ function stop(nodeNumber) {
 function update() {
     info(`command: update`);
 
-    exec(`npm update -g ${CONSTANTS.npmPackageName}`, true);
+    // Update npm package if outdated.
+    try {
+        exec(`npm -g outdated ${CONSTANTS.npmPackageName}`);
+    }
+    catch(e) {
+        const splitted = e.stdout.toString().trim().split('\n').map(l => l.trim().split(/\s+/));
+        if (splitted.length > 1) {
+            info(`\nUpdating ${CONSTANTS.npmPackageName} npm package...`);
+            exec(`npm -g install ${CONSTANTS.npmPackageName}@${splitted[1][3]}`, true);
+        }
+    }
 
-    info('Updating docker images...');
-    exec(`docker pull ${appenv.devkitImage} && docker pull ${appenv.instanceImage}`, true);
+    info('\nUpdating docker images...');
+    exec(`docker pull ${appenv.devkitImage}`);
+    exec(`docker pull ${appenv.instanceImage}`, true);
 
     // Clear if there's already deployed cluster since they are outdated now.
     if (isExists(CONSTANTS.deploymentContainerName)) {
-        info('Cleaning the deployed contracts...');
+        info('\nCleaning the deployed contracts...');
         teardownDeploymentCluster();
     }
 
-    success('Update Completed !!');
+    success('\nUpdate Completed !!');
     warn('NOTE: You need to re-deploy your contracts to make the new changes effective.');
 }
 
 function uninstall() {
     info(`command: uninstall`);
 
-    exec(`npm uninstall -g ${CONSTANTS.npmPackageName}`, true);
+    info(`\nUninstalling ${CONSTANTS.npmPackageName} npm package...`);
+    exec(`npm -g uninstall ${CONSTANTS.npmPackageName}`, true);
 
     // Remove deployment cluster if exist.
     if (isExists(CONSTANTS.deploymentContainerName)) {
-        info('Cleaning the deployed contracts...');
+        info('\nCleaning the deployed contracts...');
         teardownDeploymentCluster();
     }
 
     // Remove docker images if exist.
     if (isExists(appenv.devkitImage, 'image')) {
-        info('Removing devkit docker image...');
+        info('\nRemoving devkit docker image...');
         exec(`docker image rm ${appenv.devkitImage}`, true);
     }
 
     if (isExists(appenv.instanceImage, 'image')) {
-        info('Removing instance docker image...');
+        info('\nRemoving instance docker image...');
         exec(`docker image rm ${appenv.instanceImage}`, true);
     }
 
-    success('Uninstalled hpdevkit !!');
+    success('\nUninstalled hpdevkit !!');
 }
 
 module.exports = {

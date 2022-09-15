@@ -67,17 +67,17 @@ function isExists(name, type = null) {
         const res = exec(`docker ${type === 'image' ? 'image ' : ''}inspect ${name}`);
         if (!res)
             return false;
-        const resJson = JSON.parse(res.toString());
-        return resJson && resJson.length;
+        const resJson = JSON.parse(res.toString().trim());
+        return !!(resJson && resJson.length);
     }
-    catch {
+    catch (e) {
         return false;
     }
 }
 
 function initializeDeploymentCluster() {
     if (!isExists(CONSTANTS.deploymentContainerName)) {
-        log("Initializing deployment cluster");
+        log("\nInitializing deployment cluster");
 
         // Stop cluster if running. Create cluster if not exists.
         runOnContainer(CONSTANTS.deploymentContainerName, null, true, true, null, 'cluster stop ; cluster create', null);
@@ -91,7 +91,8 @@ function initializeDeploymentCluster() {
 }
 
 function teardownDeploymentCluster() {
-    exec(`docker stop ${CONSTANTS.deploymentContainerName} && docker rm ${CONSTANTS.deploymentContainerName}`);
+    exec(`docker stop ${CONSTANTS.deploymentContainerName}`);
+    exec(`docker rm ${CONSTANTS.deploymentContainerName}`);
     runOnContainer(null, null, true, true, null, "cluster stop ; cluster destroy", null);
 }
 
