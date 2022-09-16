@@ -37,4 +37,4 @@ hpdevkit uninstall
 
 **NOTE: Uninstalling from hpdevkit CLI is recommended. Otherwise, supporting docker images and containers won't get removed.**
 
-<span style="color: #601430e6">_**NOTE:** For Installation, Update and Uninstallation you'll need root privileges for Linux platforms, Add `sudo` to above commands._</span>
+_**NOTE:** In Linux platforms, for Installation, Update and Uninstallation you'll need root privileges. Add `sudo` to above commands._
