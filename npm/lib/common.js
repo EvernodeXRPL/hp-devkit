@@ -1,6 +1,6 @@
 const appenv = require("../appenv");
 const { exec } = require("./child-proc");
-const { log } = require("./logger");
+const { log, info } = require("./logger");
 
 const GLOBAL_PREFIX = "hpdevkit";
 const VERSION = "0.1.0";
@@ -96,11 +96,23 @@ function teardownDeploymentCluster() {
     runOnContainer(null, null, true, true, null, "cluster stop ; cluster destroy", null);
 }
 
+function updateDockerImages() {
+    exec(`docker pull ${appenv.devkitImage}`);
+    exec(`docker pull ${appenv.instanceImage}`, true);
+
+    // Clear if there's already deployed cluster since they are outdated now.
+    if (isExists(CONSTANTS.deploymentContainerName)) {
+        info('\nCleaning the deployed contracts...');
+        teardownDeploymentCluster();
+    }
+}
+
 module.exports = {
     runOnContainer,
     executeOnContainer,
     isExists,
     initializeDeploymentCluster,
     teardownDeploymentCluster,
+    updateDockerImages,
     CONSTANTS
 };

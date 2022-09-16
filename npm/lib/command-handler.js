@@ -1,8 +1,16 @@
 const fs = require('fs');
 const appenv = require('../appenv');
 const { exec } = require('./child-proc');
-const { CONSTANTS, initializeDeploymentCluster, runOnContainer, executeOnContainer, teardownDeploymentCluster, isExists } = require('./common');
-const { success, error, info, warn, log } = require('./logger');
+const {
+    CONSTANTS,
+    initializeDeploymentCluster,
+    runOnContainer,
+    executeOnContainer,
+    teardownDeploymentCluster,
+    isExists,
+    updateDockerImages
+} = require('./common');
+const { success, error, info, warn } = require('./logger');
 
 function version() {
     info(`command: version`);
@@ -97,7 +105,7 @@ function update() {
     try {
         exec(`npm -g outdated ${CONSTANTS.npmPackageName}`);
     }
-    catch(e) {
+    catch (e) {
         const splitted = e.stdout.toString().trim().split('\n').map(l => l.trim().split(/\s+/));
         if (splitted.length > 1) {
             info(`\nUpdating ${CONSTANTS.npmPackageName} npm package...`);
@@ -106,14 +114,7 @@ function update() {
     }
 
     info('\nUpdating docker images...');
-    exec(`docker pull ${appenv.devkitImage}`);
-    exec(`docker pull ${appenv.instanceImage}`, true);
-
-    // Clear if there's already deployed cluster since they are outdated now.
-    if (isExists(CONSTANTS.deploymentContainerName)) {
-        info('\nCleaning the deployed contracts...');
-        teardownDeploymentCluster();
-    }
+    updateDockerImages();
 
     success('\nUpdate Completed !!');
     warn('NOTE: You need to re-deploy your contracts to make the new changes effective.');

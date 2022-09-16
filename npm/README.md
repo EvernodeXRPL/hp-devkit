@@ -14,14 +14,26 @@ npm i -g hpdevkit
 
 ## Updates
 Update `hpdevkit` to the latest and update the supporting docker images.
+### Using npm
+```
+npm update -g hpdevkit-testdev
+```
+
+### Using hpdevkit CLI
 ```
 hpdevkit update
 ```
 
+**NOTE: You need to re-deploy your contracts to make the new changes effective.**
+
 ## Uninstall
 Uninstall `hpdevkit` and the supporting docker images and containers.
+
+### Using hpdevkit CLI
 ```
 hpdevkit uninstall
 ```
+
+**NOTE: Uninstalling from hpdevkit CLI is recommended. Supporting docker images and containers won't get removed otherwise**
 
 _**NOTE:** For Installation, Update and Uninstallation you'll need root privileges for Linux platforms, Add `sudo` to above commands._
