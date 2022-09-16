@@ -101,9 +101,11 @@ function stop(nodeNumber) {
 function update() {
     info(`command: update`);
 
-    // Update npm package if outdated.
+    // Update npm package if outdated (Docker images will for updated from there). Otherwise only update the docker images.
     try {
         exec(`npm -g outdated ${CONSTANTS.npmPackageName}`);
+        info('\nUpdating docker images...');
+        updateDockerImages();
     }
     catch (e) {
         const splitted = e.stdout.toString().trim().split('\n').map(l => l.trim().split(/\s+/));
@@ -112,9 +114,6 @@ function update() {
             exec(`npm -g install ${CONSTANTS.npmPackageName}@${splitted[1][3]}`, true);
         }
     }
-
-    info('\nUpdating docker images...');
-    updateDockerImages();
 
     success('\nUpdate Completed !!');
     warn('NOTE: You need to re-deploy your contracts to make the new changes effective.');

@@ -18,8 +18,12 @@ const CONSTANTS = {
     codegenContainerName: `${GLOBAL_PREFIX}_codegen`
 };
 
-function runOnContainer(name, detached, autoRemove, mountStock, mountVolume, entryCmd, entryPoint) {
-    command = `docker run -it`;
+function runOnContainer(name, detached, autoRemove, mountStock, mountVolume, entryCmd, entryPoint, interactive = true) {
+    command = `docker run`;
+
+    if (interactive)
+        command += " -it";
+
     if (name)
         command += ` --name ${name}`;
 
@@ -93,7 +97,7 @@ function initializeDeploymentCluster() {
 function teardownDeploymentCluster() {
     exec(`docker stop ${CONSTANTS.deploymentContainerName}`);
     exec(`docker rm ${CONSTANTS.deploymentContainerName}`);
-    runOnContainer(null, null, true, true, null, "cluster stop ; cluster destroy", null);
+    runOnContainer(null, null, true, true, null, "cluster stop ; cluster destroy", null, false);
 }
 
 function updateDockerImages() {
