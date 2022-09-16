@@ -40,7 +40,7 @@ program
 
 program
     .command('update')
-    .description('hpdevkit stop <node-number>')
+    .description('hpdevkit update')
     .action(update);
 
 program
