@@ -4,7 +4,7 @@ Evernode uses HotPocket as its smart contract engine. HotPocket smart contracts 
 ## Installation
 
 ### Prerequisites
-HotPocket developer kit requires you to install [Docker Engine](https://docs.docker.com/engine/install/) and [Node Js](https://nodejs.org/en/) on your development machine.
+HotPocket developer kit requires you to install [Docker Engine](https://docs.docker.com/engine/install/) and [NodeJs](https://nodejs.org/en/) on your development machine.
 
 ### Supports cross platform
 This is a npm global package which supports both Linux and Windows
@@ -21,7 +21,7 @@ hpdevkit update
 ## Uninstall
 Uninstall `hpdevkit` and the supporting docker images and containers.
 ```
-hpdevkit update
+hpdevkit uninstall
 ```
 
 _**NOTE:** For Installation, Update and Uninstallation you'll need root privileges for Linux platforms, Add `sudo` to above commands._
