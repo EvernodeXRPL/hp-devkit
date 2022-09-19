@@ -101,7 +101,7 @@ function stop(nodeNumber) {
 function update() {
     info(`command: update`);
 
-    // Update npm package if outdated (Docker images will for updated from there). Otherwise only update the docker images.
+    // Update npm package if outdated (Docker images will be updated from there). Otherwise only update the docker images.
     try {
         exec(`npm -g outdated ${CONSTANTS.npmPackageName}`);
         info('\nUpdating docker images...');
