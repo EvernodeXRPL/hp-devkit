@@ -34,6 +34,6 @@ Uninstall `hpdevkit` and the supporting docker images and containers.
 hpdevkit uninstall
 ```
 
-**NOTE: Uninstalling from hpdevkit CLI is recommended. Supporting docker images and containers won't get removed otherwise**
+**NOTE: Uninstalling from hpdevkit CLI is recommended. If you uninstall using npm you'll have to clean hpdevkit supporting docker images and containers manually.**
 
 _**NOTE:** For Installation, Update and Uninstallation you'll need root privileges for Linux platforms, Add `sudo` to above commands._
