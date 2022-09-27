@@ -124,22 +124,15 @@ function bundle(nodePublicKey, contractDirectoryPath) {
         fs.writeFileSync(contractConfigPath, JSON.stringify(contractConfigs, null, 4));
 
         // Add prerequisite install script.
-        fs.writeFile(prerequisiteInstaller,
+        fs.writeFileSync(prerequisiteInstaller,
             `#!/bin/bash\n
             echo "Prerequisite installer script"\n
-            exit 0\n`,
-            (err) => {
-                if (err) throw err;
-            });
+            exit 0\n`);
 
         // Change permission  pre-requisite installer.
-        fs.chmod(prerequisiteInstaller, 0o775, (err) => {
-            if (err) {
-                throw err;
-            }
-        });
+        fs.chmodSync(prerequisiteInstaller, 0o755);
 
-        if (!fs.existsSync(`${contractDirectoryPath}/../bundle`)){
+        if (!fs.existsSync(`${contractDirectoryPath}/../bundle`)) {
             fs.mkdirSync(`${contractDirectoryPath}/../bundle`);
         }
 
