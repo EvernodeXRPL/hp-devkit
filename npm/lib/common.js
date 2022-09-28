@@ -3,7 +3,7 @@ const archiver = require('archiver');
 
 const appenv = require("../appenv");
 const { exec } = require("./child-proc");
-const { log, info } = require("./logger");
+const { log, info, success } = require("./logger");
 
 const GLOBAL_PREFIX = "hpdevkit";
 const VERSION = "0.1.0";
@@ -130,7 +130,7 @@ function archiveDirectory(sourcePath, destinationPath = null) {
 
     // Callbacks
     output.on('close', () => {
-        console.log(`Archive finished. (location: ${target})`);
+        success(`Archive finished. (location: ${target})`);
     });
 
     archive.on('error', (err) => {

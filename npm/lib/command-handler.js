@@ -78,8 +78,12 @@ function deploy(contractPath) {
 
 function bundle(nodePublicKey, contractDirectoryPath) {
     info(`command: bundle`);
-    let stats = fs.statSync(contractDirectoryPath);
+
     try {
+
+        contractDirectoryPath = path.normalize(contractDirectoryPath);
+        let stats = fs.statSync(contractDirectoryPath);
+
         if (!stats.isDirectory())
             throw 'You are supposed to provide a path of the contract directory.';
 
@@ -93,8 +97,8 @@ function bundle(nodePublicKey, contractDirectoryPath) {
             "unl": [
                 `${nodePublicKey}`
             ],
-            "bin_path": `${overrideConfig.contract.bin_path}`,
-            "bin_args": `${overrideConfig.contract.bin_args}`,
+            "bin_path": `${overrideConfig?.contract.bin_path}`,
+            "bin_args": `${overrideConfig?.contract.bin_args}`,
             "environment": "",
             "max_input_ledger_offset": 10,
             "consensus": {
@@ -122,6 +126,7 @@ function bundle(nodePublicKey, contractDirectoryPath) {
 
         // Write contract.cfg file content.
         fs.writeFileSync(contractConfigPath, JSON.stringify(contractConfigs, null, 4));
+        info("Prepared contract.cfg file.");
 
         // Add prerequisite install script.
         fs.writeFileSync(prerequisiteInstaller,
@@ -131,16 +136,18 @@ function bundle(nodePublicKey, contractDirectoryPath) {
 
         // Change permission  pre-requisite installer.
         fs.chmodSync(prerequisiteInstaller, 0o755);
+        info("Added prerequisite installer script.");
 
-        if (!fs.existsSync(`${contractDirectoryPath}/../bundle`)) {
-            fs.mkdirSync(`${contractDirectoryPath}/../bundle`);
+        const bundleTargetPath = path.normalize(`${contractDirectoryPath}/../bundle`);
+
+        if (!fs.existsSync(bundleTargetPath)) {
+            fs.mkdirSync(bundleTargetPath);
         }
 
-        archiveDirectory(contractDirectoryPath, `${contractDirectoryPath}/../bundle`)
-
+        archiveDirectory(contractDirectoryPath, bundleTargetPath);
 
     } catch (e) {
-        info(e);
+        error(e);
     }
 
 }
