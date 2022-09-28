@@ -126,7 +126,7 @@ function bundle(nodePublicKey, contractDirectoryPath) {
 
         // Write contract.cfg file content.
         fs.writeFileSync(contractConfigPath, JSON.stringify(contractConfigs, null, 4));
-        info("Prepared contract.cfg file.");
+        info(`Prepared ${CONSTANTS.contractCfgFile} file.`);
 
         // Add prerequisite install script.
         fs.writeFileSync(prerequisiteInstaller,

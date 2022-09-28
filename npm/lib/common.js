@@ -19,7 +19,7 @@ const CONSTANTS = {
     confOverrideFile: "hp.cfg.override",
     codegenOutputDir: "/codegen-output",
     codegenContainerName: `${GLOBAL_PREFIX}_codegen`,
-    contractCfgFile: "contract.cfg",
+    contractCfgFile: "contract.config",
     prerequisiteInstaller: "install.sh"
 };
 
