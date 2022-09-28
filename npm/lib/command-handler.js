@@ -130,9 +130,9 @@ function bundle(nodePublicKey, contractDirectoryPath) {
 
         // Add prerequisite install script.
         fs.writeFileSync(prerequisiteInstaller,
-            `#!/bin/bash\n
-            echo "Prerequisite installer script"\n
-            exit 0\n`);
+        `#!/bin/bash\n` +
+        `echo "Prerequisite installer script"\n` +
+        `exit 0`, null);
 
         // Change permission  pre-requisite installer.
         fs.chmodSync(prerequisiteInstaller, 0o755);
