@@ -124,7 +124,7 @@ function bundle(nodePublicKey, contractDirectoryPath) {
             }
         }
 
-        // Write contract.cfg file content.
+        // Write contract.config file content.
         fs.writeFileSync(contractConfigPath, JSON.stringify(contractConfigs, null, 4));
         info(`Prepared ${CONSTANTS.contractCfgFile} file.`);
 
