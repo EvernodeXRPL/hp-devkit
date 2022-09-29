@@ -38,10 +38,8 @@ function codeGen(platform, apptype, projName) {
         return;
     }
 
-    let containerStarted = false;
     try {
         runOnContainer(CONSTANTS.codegenContainerName, null, null, null, null, `${platform} ${apptype} ${projName}`, 'codegen');
-        containerStarted = true;
         exec(`docker cp ${CONSTANTS.codegenContainerName}:${CONSTANTS.codegenOutputDir} ./${projName}`);
         success(`Project '${projName}' created.`);
     }
@@ -49,7 +47,7 @@ function codeGen(platform, apptype, projName) {
         error(`Project '${projName}' generation failed.`);
     }
     finally {
-        if (containerStarted)
+        if (isExists(CONSTANTS.codegenContainerName))
             exec(`docker rm ${CONSTANTS.codegenContainerName}`, false);
     }
 }
