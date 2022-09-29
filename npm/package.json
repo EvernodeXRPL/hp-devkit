@@ -1,6 +1,6 @@
 {
   "name": "hpdevkit",
-  "version": "0.5.2",
+  "version": "0.5.11",
   "description": "Developer toolkit for HotPocket smart contract development",
   "scripts": {
     "install": "node scripts/install.js"
