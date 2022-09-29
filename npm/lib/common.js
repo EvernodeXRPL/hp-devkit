@@ -1,6 +1,9 @@
+const fs = require('fs');
+const archiver = require('archiver');
+
 const appenv = require("../appenv");
 const { exec } = require("./child-proc");
-const { log, info } = require("./logger");
+const { log, info, success } = require("./logger");
 
 const GLOBAL_PREFIX = "hpdevkit";
 const VERSION = "0.1.0";
@@ -15,7 +18,9 @@ const CONSTANTS = {
     deploymentContainerName: `${GLOBAL_PREFIX}_${appenv.cluster}_deploymgr`,
     confOverrideFile: "hp.cfg.override",
     codegenOutputDir: "/codegen-output",
-    codegenContainerName: `${GLOBAL_PREFIX}_codegen`
+    codegenContainerName: `${GLOBAL_PREFIX}_codegen`,
+    contractCfgFile: "contract.config",
+    prerequisiteInstaller: "install.sh"
 };
 
 function runOnContainer(name, detached, autoRemove, mountStock, mountVolume, entryCmd, entryPoint, interactive = true) {
@@ -111,6 +116,35 @@ function updateDockerImages() {
     }
 }
 
+function archiveDirectory(sourcePath, destinationPath = null) {
+
+    if (!sourcePath)
+        throw "Invalid path was provided."
+
+    // Create a file to stream archive data to
+    const target = (destinationPath) ? `${destinationPath}/bundle.zip` : `${sourcePath}/bundle.zip`
+    const output = fs.createWriteStream(target);
+    const archive = archiver('zip', {
+        zlib: { level: 9 }
+    });
+
+    // Callbacks
+    output.on('close', () => {
+        success(`Archive finished. (location: ${target})`);
+    });
+
+    archive.on('error', (err) => {
+        throw err;
+    });
+
+    // Pipe and append files
+    archive.pipe(output);
+    archive.directory(sourcePath, false);
+
+    // Finalize
+    archive.finalize();
+}
+
 module.exports = {
     runOnContainer,
     executeOnContainer,
@@ -118,5 +152,6 @@ module.exports = {
     initializeDeploymentCluster,
     teardownDeploymentCluster,
     updateDockerImages,
+    archiveDirectory,
     CONSTANTS
 };

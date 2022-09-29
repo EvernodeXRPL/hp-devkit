@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 const appenv = require('../appenv');
 const { exec } = require('./child-proc');
 const {
@@ -8,7 +9,8 @@ const {
     executeOnContainer,
     teardownDeploymentCluster,
     isExists,
-    updateDockerImages
+    updateDockerImages,
+    archiveDirectory
 } = require('./common');
 const { success, error, info, warn } = require('./logger');
 
@@ -70,6 +72,82 @@ function deploy(contractPath) {
         info(`Streaming logs of node ${appenv.defaultNode}:`);
         executeOnContainer(CONSTANTS.deploymentContainerName, `cluster logs ${appenv.defaultNode}`);
     }
+}
+
+function bundle(nodePublicKey, contractDirectoryPath) {
+    info(`command: bundle`);
+
+    try {
+
+        contractDirectoryPath = path.normalize(contractDirectoryPath);
+        let stats = fs.statSync(contractDirectoryPath);
+
+        if (!stats.isDirectory())
+            throw 'You are supposed to provide a path of the contract directory.';
+
+        const overrideConfigPath = path.resolve(contractDirectoryPath, CONSTANTS.confOverrideFile);
+        const contractConfigPath = path.resolve(contractDirectoryPath, CONSTANTS.contractCfgFile);
+        const prerequisiteInstaller = path.resolve(contractDirectoryPath, CONSTANTS.prerequisiteInstaller);
+        const overrideConfig = JSON.parse(fs.readFileSync(overrideConfigPath).toString());
+
+        const contractConfigs = {
+            "version": "2.0",
+            "unl": [
+                `${nodePublicKey}`
+            ],
+            "bin_path": `${overrideConfig?.contract.bin_path}`,
+            "bin_args": `${overrideConfig?.contract.bin_args}`,
+            "environment": "",
+            "max_input_ledger_offset": 10,
+            "consensus": {
+                "mode": "private",
+                "roundtime": 8000,
+                "stage_slice": 25,
+                "threshold": 50
+            },
+            "npl": {
+                "mode": "private"
+            },
+            "appbill": {
+                "mode": "",
+                "bin_args": ""
+            },
+            "round_limits": {
+                "user_input_bytes": 0,
+                "user_output_bytes": 0,
+                "npl_output_bytes": 0,
+                "proc_cpu_seconds": 0,
+                "proc_mem_bytes": 0,
+                "proc_ofd_count": 0
+            }
+        }
+
+        // Write contract.config file content.
+        fs.writeFileSync(contractConfigPath, JSON.stringify(contractConfigs, null, 4));
+        info(`Prepared ${CONSTANTS.contractCfgFile} file.`);
+
+        // Add prerequisite install script.
+        fs.writeFileSync(prerequisiteInstaller,
+        `#!/bin/bash\n` +
+        `echo "Prerequisite installer script"\n` +
+        `exit 0`, null);
+
+        // Change permission  pre-requisite installer.
+        fs.chmodSync(prerequisiteInstaller, 0o755);
+        info("Added prerequisite installer script.");
+
+        const bundleTargetPath = path.normalize(`${contractDirectoryPath}/../bundle`);
+
+        if (!fs.existsSync(bundleTargetPath)) {
+            fs.mkdirSync(bundleTargetPath);
+        }
+
+        archiveDirectory(contractDirectoryPath, bundleTargetPath);
+
+    } catch (e) {
+        error(e);
+    }
+
 }
 
 function clean() {
@@ -147,6 +225,7 @@ module.exports = {
     version,
     codeGen,
     deploy,
+    bundle,
     clean,
     logs,
     start,
