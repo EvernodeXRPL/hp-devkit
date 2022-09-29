@@ -4,7 +4,7 @@ const archiver = require('archiver');
 const appenv = require("../appenv");
 const { exec } = require("./child-proc");
 const { log, info, success } = require("./logger");
-const {resolve} = require('path');
+const { resolve } = require('path');
 
 const GLOBAL_PREFIX = "hpdevkit";
 const VERSION = "0.1.0";
