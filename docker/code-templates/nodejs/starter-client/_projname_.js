@@ -102,7 +102,6 @@ async function clientApp() {
                 }
 
                 client.submitContractInput(inp).then(input => {
-                    // console.log(input.hash);
                     input.submissionStatus.then(s => {
                         if (s.status != "accepted")
                             console.log(s.reason);
