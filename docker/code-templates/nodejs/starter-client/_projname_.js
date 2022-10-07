@@ -78,6 +78,7 @@ async function clientApp() {
         client.close();
     });
 
+    console.log('\x1b[36m%s\x1b[0m',"Run 'help' for more information on commands.")
     console.log("Ready to accept inputs.");
 
     const input_pump = () => {
@@ -88,7 +89,7 @@ async function clientApp() {
                 if (inp.startsWith("help")) {
                     console.log('\x1b[36m%s\x1b[0m', `
     Commands :
-    set <text>  -- To write some text to a file in contract side.
+    set <text>  -- To write some text to a file on the contract side.
     get         -- To retrieve the written content.
                     `);
                     input_pump();
