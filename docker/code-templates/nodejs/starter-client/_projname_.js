@@ -78,7 +78,7 @@ async function clientApp() {
         client.close();
     });
 
-    console.log('\x1b[36m%s\x1b[0m',"Run 'help' for more information on commands.")
+    console.log('\x1b[36m%s\x1b[0m',"Run 'help' for more information on commands.");
     console.log("Ready to accept inputs.");
 
     const input_pump = () => {
@@ -92,22 +92,22 @@ async function clientApp() {
     set <text>  -- To write some text to a file on the contract side.
     get         -- To retrieve the written content.
                     `);
-                    input_pump();
-                }
-                if (inp.startsWith("set ")) {
-                    inp = JSON.stringify({ type: "set", data: inp.substr(4) });
-                }
+                } else {
+                    if (inp.startsWith("set ")) {
+                        inp = JSON.stringify({ type: "set", data: inp.substr(4) });
+                    }
 
-                else if (inp.startsWith("get")) {
-                    inp = JSON.stringify({ type: "get" });
-                }
+                    else if (inp.startsWith("get")) {
+                        inp = JSON.stringify({ type: "get" });
+                    }
 
-                client.submitContractInput(inp).then(input => {
-                    input.submissionStatus.then(s => {
-                        if (s.status != "accepted")
-                            console.log(s.reason);
+                    client.submitContractInput(inp).then(input => {
+                        input.submissionStatus.then(s => {
+                            if (s.status != "accepted")
+                                console.log(s.reason);
+                        });
                     });
-                });
+                }
 
             }
 
