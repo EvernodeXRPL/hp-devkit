@@ -97,7 +97,7 @@ function bundle(nodePublicKey, contractDirectoryPath) {
             ],
             "bin_path": `${overrideConfig?.contract.bin_path}`,
             "bin_args": `${overrideConfig?.contract.bin_args}`,
-            "environment": "",
+            "environment": {},
             "max_input_ledger_offset": 10,
             "consensus": {
                 "mode": "private",
