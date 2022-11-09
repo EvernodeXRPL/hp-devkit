@@ -6,7 +6,7 @@ cluster="default"
 clusterSize=$([ -z $HP_CLUSTER_SIZE ] && echo 3 || echo "$HP_CLUSTER_SIZE")
 defaultNode=$([ -z $HP_DEFAULT_NODE ] && echo 1 || echo "$HP_DEFAULT_NODE")
 devkitImage=$([ -z $HP_DEVKIT_IMAGE ] && echo "evernodedev/hpdevkit" || echo "$HP_DEVKIT_IMAGE")
-instanceImage=$([ -z $HP_INSTANCE_IMAGE ] && echo "evernodedev/hotpocket:0.6.0-ubt.20.04-njs.16" || echo "$HP_INSTANCE_IMAGE")
+instanceImage=$([ -z $HP_INSTANCE_IMAGE ] && echo "evernodedev/hotpocket:latest-ubt.20.04-njs.16" || echo "$HP_INSTANCE_IMAGE")
 hpUserPortBegin=$([ -z $HP_USER_PORT_BEGIN ] && echo 8081 || echo "$HP_USER_PORT_BEGIN")
 hpPeerPortBegin=$([ -z $HP_PEER_PORT_BEGIN ] && echo 22861 || echo "$HP_PEER_PORT_BEGIN")
 
