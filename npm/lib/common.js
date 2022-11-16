@@ -101,8 +101,10 @@ function initializeDeploymentCluster() {
 }
 
 function teardownDeploymentCluster() {
-    exec(`docker stop ${CONSTANTS.deploymentContainerName}`);
-    exec(`docker rm ${CONSTANTS.deploymentContainerName}`);
+    if (isExists(CONSTANTS.deploymentContainerName)) {
+        exec(`docker stop ${CONSTANTS.deploymentContainerName}`);
+        exec(`docker rm ${CONSTANTS.deploymentContainerName}`);
+    }
     runOnContainer(null, null, true, true, null, "cluster stop ; cluster destroy", null, false);
 }
 
