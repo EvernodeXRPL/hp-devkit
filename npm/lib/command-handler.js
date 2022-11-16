@@ -1,5 +1,4 @@
 const fs = require('fs');
-const path = require('path');
 const appenv = require('../appenv');
 const { exec } = require('./child-proc');
 const {
@@ -9,8 +8,7 @@ const {
     executeOnContainer,
     teardownDeploymentCluster,
     isExists,
-    updateDockerImages,
-    archiveDirectory
+    updateDockerImages
 } = require('./common');
 const { success, error, info, warn } = require('./logger');
 
