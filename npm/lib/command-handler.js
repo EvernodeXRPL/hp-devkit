@@ -149,7 +149,6 @@ module.exports = {
     version,
     codeGen,
     deploy,
-    bundle,
     clean,
     logs,
     start,
