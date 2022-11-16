@@ -1,6 +1,0 @@
-{
-    "name": "_projname_",
-    "dependencies": {
-        "hotpocket-js-client": "0.5.3"
-    }
-}

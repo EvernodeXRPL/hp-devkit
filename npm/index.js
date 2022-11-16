@@ -1,12 +1,7 @@
 #! /usr/bin/env node
 
 const { program } = require('commander');
-const { version, codeGen, bundle, deploy, clean, logs, start, stop, update, uninstall } = require('./lib/command-handler');
-
-program
-    .command('bundle <node-public-key> <contract-path>')
-    .description('hpdevkit bundle <node-public-key> <contract-path>')
-    .action(bundle);
+const { version, codeGen, deploy, clean, logs, start, stop, update, uninstall } = require('./lib/command-handler');
 
 program
     .command('version')
