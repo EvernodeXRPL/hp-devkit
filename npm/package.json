@@ -1,6 +1,6 @@
 {
   "name": "hpdevkit",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "description": "Developer toolkit for HotPocket smart contract development",
   "scripts": {
     "install": "node scripts/install.js"
@@ -14,7 +14,6 @@
   "homepage": "https://github.com/HotPocketDev/evernode-sdk",
   "license": "MIT",
   "dependencies": {
-    "archiver": "5.3.1",
     "commander": "9.4.0"
   },
   "bin": {
