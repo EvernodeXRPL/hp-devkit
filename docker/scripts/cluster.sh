@@ -86,7 +86,7 @@ function create_instance {
     # Create container for hotpocket instance.
     local container_name="${container_prefix}_$node"
     docker container create --name $container_name --privileged \
-        -p $user_port:$user_port --network $network --network-alias node$node \
+        -p $user_port:$user_port --network $network --network-alias node$node --restart unless-stopped \
         --mount type=volume,src=$volume,dst=$volume_mount $hotpocket_image run $(contract_dir_mount_path $node)
 }
 
