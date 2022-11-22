@@ -20,7 +20,7 @@ const CONSTANTS = {
     prerequisiteInstaller: "install.sh"
 };
 
-function runOnContainer(name, detached, autoRemove, mountStock, mountVolume, entryCmd, entryPoint, interactive = true) {
+function runOnContainer(name, detached, autoRemove, mountStock, mountVolume, entryCmd, entryPoint, interactive = true, restart = null) {
     command = `docker run`;
 
     if (interactive)
@@ -45,6 +45,9 @@ function runOnContainer(name, detached, autoRemove, mountStock, mountVolume, ent
         command += ` --entrypoint ${entryPoint}`;
     else
         command += " --entrypoint /bin/bash";
+
+    if (restart)
+        command += ` --restart ${restart}`;
 
     command += ` -e CLUSTER=${appenv.cluster} -e CLUSTER_SIZE=${appenv.clusterSize} -e DEFAULT_NODE=${appenv.defaultNode} -e VOLUME=${CONSTANTS.volume} -e NETWORK=${CONSTANTS.network}`;
     command += ` -e CONTAINER_PREFIX=${CONSTANTS.containerPrefix} -e VOLUME_MOUNT=${CONSTANTS.volumeMount} -e BUNDLE_MOUNT=${CONSTANTS.bundleMount} -e HOTPOCKET_IMAGE=${appenv.instanceImage}`;
@@ -89,7 +92,7 @@ function initializeDeploymentCluster() {
         runOnContainer(CONSTANTS.deploymentContainerName, null, true, true, null, 'cluster stop ; cluster create', null);
 
         // Spin up management container.
-        runOnContainer(CONSTANTS.deploymentContainerName, true, false, true, true, null, null);
+        runOnContainer(CONSTANTS.deploymentContainerName, true, false, true, true, null, null, true, 'unless-stopped');
 
         // Bind the instance mesh network config together.
         executeOnContainer(CONSTANTS.deploymentContainerName, 'cluster bindmesh');
