@@ -9,7 +9,7 @@ const {
     teardownDeploymentCluster,
     isExists,
     updateDockerImages
-} = require('./common');
+} = require('./docker-helpers');
 const { success, error, info, warn } = require('./logger');
 
 function version() {
@@ -102,6 +102,12 @@ function stop(nodeNumber) {
     executeOnManagementContainer(`cluster stop ${nodeNumber}`);
 }
 
+function status() {
+    info(`command: status (cluster: ${appenv.cluster})`);
+
+    executeOnManagementContainer(`cluster status`);
+}
+
 function update() {
     info(`command: update`);
 
@@ -158,6 +164,7 @@ module.exports = {
     start,
     stop,
     join,
+    status,
     update,
     uninstall
 };

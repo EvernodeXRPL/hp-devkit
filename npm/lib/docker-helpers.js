@@ -71,6 +71,11 @@ function executeOnContainer(name, cmd) {
 }
 
 function executeOnManagementContainer(cmd) {
+    if (!isExists(CONSTANTS.managementContainerName)) {
+        info(`cluster '${appenv.cluster}' not found.`)
+        return;
+    }
+
     executeOnContainer(CONSTANTS.managementContainerName, cmd)
 }
 

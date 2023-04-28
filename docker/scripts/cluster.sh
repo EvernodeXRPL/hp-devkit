@@ -15,11 +15,11 @@ peer_port_begin=$HP_PEER_PORT_BEGIN
 
 if [ "$command" = "create" ] || [ "$command" = "bindmesh" ] || [ "$command" = "destroy" ] || \
     [ "$command" = "start" ] || [ "$command" = "stop" ] || [ "$command" = "join" ] || \
-    [ "$command" = "logs" ] || [ "$command" = "sync" ] ; then
+    [ "$command" = "logs" ] || [ "$command" = "sync" ] || [ "$command" = "status" ] ; then
     echo "sub-command: $command"
 else
     echo "Invalid sub-command."
-    echo "Expected: create | destroy | start | stop | join | logs | sync"
+    echo "Expected: create | destroy | start | stop | join | logs | sync | status"
     exit 1
 fi
 
@@ -303,6 +303,10 @@ function validate_port_begin {
     ! validate_port $peer_port_begin && echo "Invalid peer port begin." && exit 1
 }
 
+function show_status {
+    docker ps -a --format "table {{.Names}}\\t{{.State}}" | grep $container_prefix | sort
+}
+
 if [ $command = "create" ]; then
     ! validate_node_num_arg $cluster_size && echo "Invalid cluster size." && exit 1
     validate_port_begin
@@ -323,4 +327,6 @@ elif [ $command = "logs" ]; then
     attach_logs $2
 elif [ $command = "sync" ]; then
     sync_contract_bundle
+elif [ $command = "status" ]; then
+    show_status
 fi

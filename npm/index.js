@@ -1,57 +1,62 @@
 #! /usr/bin/env node
 
 const { program } = require('commander');
-const { version, codeGen, deploy, clean, logs, start, stop, join, update, uninstall } = require('./lib/command-handler');
+const commands = require('./lib/commands');
 
 program
     .command('version')
     .description('hpdevkit version')
-    .action(version);
+    .action(commands.version);
 
 program
     .command('gen <platform> <app-type> <project-name>')
     .description('hpdevkit gen <platform> <app-type> <project-name>')
-    .action(codeGen);
+    .action(commands.codeGen);
 
 program
     .command('deploy <contract-path>')
     .description('hpdevkit deploy <contract-path>')
-    .action(deploy);
+    .action(commands.deploy);
 
 program
     .command('clean')
     .description('hpdevkit clean')
-    .action(clean);
+    .action(commands.clean);
 
 program
     .command('logs <node-number>')
     .description('hpdevkit logs <node-number>')
-    .action(logs);
+    .action(commands.logs);
 
 program
     .command('start [node-number]')
     .description('hpdevkit start [node-number]')
-    .action(start);
+    .action(commands.start);
 
 program
     .command('stop [node-number]')
     .description('hpdevkit stop [node-number]')
-    .action(stop);
+    .action(commands.stop);
 
 program
     .command('join')
     .description('hpdevkit join')
-    .action(join);
+    .action(commands.join);
+
+program
+    .command('status')
+    .description('hpdevkit status')
+    .action(commands.status);
 
 program
     .command('update')
     .description('hpdevkit update')
-    .action(update);
+    .action(commands.update);
 
 program
     .command('uninstall')
     .description('uninstall')
-    .action(uninstall);
+    .action(commands.uninstall);
 
 try {
     program.parse();
