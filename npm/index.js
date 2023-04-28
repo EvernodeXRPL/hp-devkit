@@ -5,57 +5,57 @@ const commands = require('./lib/commands');
 
 program
     .command('version')
-    .description('hpdevkit version')
+    .description('Display the hpdevkit version.')
     .action(commands.version);
 
 program
     .command('gen <platform> <app-type> <project-name>')
-    .description('hpdevkit gen <platform> <app-type> <project-name>')
+    .description('Generate HotPocket application development projects.')
     .action(commands.codeGen);
 
 program
     .command('deploy <contract-path>')
-    .description('hpdevkit deploy <contract-path>')
+    .description('Deploy the specified directory to a HotPocket cluster.')
     .action(commands.deploy);
 
 program
     .command('clean')
-    .description('hpdevkit clean')
+    .description('Destroy the HotPocket cluster.')
     .action(commands.clean);
 
 program
     .command('logs <node-number>')
-    .description('hpdevkit logs <node-number>')
+    .description('Display logs of the specified node.')
     .action(commands.logs);
 
 program
     .command('start [node-number]')
-    .description('hpdevkit start [node-number]')
+    .description('Start the specified node. Starts all nodes if unspecified.')
     .action(commands.start);
 
 program
     .command('stop [node-number]')
-    .description('hpdevkit stop [node-number]')
+    .description('Stop the specified node. Stops all nodes if unspecified.')
     .action(commands.stop);
 
 program
     .command('join')
-    .description('hpdevkit join')
+    .description('Create a fresh node and join the existing cluster.')
     .action(commands.join);
 
 program
     .command('status')
-    .description('hpdevkit status')
+    .description('Display status of running nodes.')
     .action(commands.status);
 
 program
     .command('update')
-    .description('hpdevkit update')
+    .description('Update hpdevkit.')
     .action(commands.update);
 
 program
     .command('uninstall')
-    .description('uninstall')
+    .description('Uninstall hpdevkit.')
     .action(commands.uninstall);
 
 try {
