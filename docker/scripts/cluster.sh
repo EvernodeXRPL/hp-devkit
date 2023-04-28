@@ -14,12 +14,12 @@ user_port_begin=$HP_USER_PORT_BEGIN
 peer_port_begin=$HP_PEER_PORT_BEGIN
 
 if [ "$command" = "create" ] || [ "$command" = "bindmesh" ] || [ "$command" = "destroy" ] || \
-    [ "$command" = "start" ] || [ "$command" = "stop" ] || \
+    [ "$command" = "start" ] || [ "$command" = "stop" ] || [ "$command" = "join" ] || \
     [ "$command" = "logs" ] || [ "$command" = "sync" ] ; then
     echo "sub-command: $command"
 else
     echo "Invalid sub-command."
-    echo "Expected: create | destroy | start | stop | logs | sync"
+    echo "Expected: create | destroy | start | stop | join | logs | sync"
     exit 1
 fi
 
@@ -159,7 +159,7 @@ function bind_mesh {
         local contract_dir=$(contract_dir_mount_path $node)
         local cfg_file=$contract_dir/cfg/hp.cfg
         local peers=$(joinarr all_peers $instance_count $i)
-        jq ".contract.unl=$unl | .mesh.known_peers=$peers" $cfg_file > $cfg_file.tmp && mv $cfg_file.tmp $cfg_file
+        jq ".contract.unl=$unl | .mesh.known_peers=$peers | .contract.consensus.mode=\"public\"" $cfg_file > $cfg_file.tmp && mv $cfg_file.tmp $cfg_file
     done
 }
 
@@ -202,6 +202,47 @@ function destroy_cluster {
     exists "network" $network && docker network rm $network
 }
 
+function join_node {
+    ensure_cluser_exists
+
+    local old_count=$(get_container_count)
+    local new_id=$((old_count+1))
+    create_instance $new_id
+
+    local tmp_dir=$(mktemp -d /tmp/hpdevkit.join.XXXXXX)
+    local node1_cfg=$(contract_dir_mount_path 1)/cfg/hp.cfg
+    local new_cfg=$(contract_dir_mount_path $new_id)/cfg/hp.cfg
+
+    # Override new node's contract id and unl from the information from node1.
+
+    # Copy node1 cfg to temp file and remove the information we don't need.
+    jq 'del(.contract,.node.public_key,.node.private_key)' $node1_cfg > $tmp_dir/a.json
+    jq '{contract:{id:.contract.id,execute:.contract.execute,unl:.contract.unl,log}}' $node1_cfg > $tmp_dir/b.json
+    jq -s '.[0] * .[1]' $tmp_dir/a.json $tmp_dir/b.json > $tmp_dir/from-node1.json
+
+    # Copy new cfg to temp file and remove the information we don't need.
+    jq 'del(.contract.unl,.contract.id)' $new_cfg > $tmp_dir/from-newnode.json
+
+    jq -s '.[0] * .[1]' $tmp_dir/from-node1.json $tmp_dir/from-newnode.json > $tmp_dir/merged.json
+
+    # Inject the list of all known peers.
+    local all_peers
+    for ((i=1; i<=$old_count; i++));
+    do  
+        # Assign peer ports in incrementing order.
+        let peer_port=$(($peer_port_begin + $i - 1))
+        all_peers[i]="node$i:${peer_port}"
+    done
+    local peers_json=$(joinarr all_peers $old_count -1)
+    jq ".mesh.known_peers=$peers_json" $tmp_dir/merged.json > $new_cfg
+
+    # Cleanup temp dir.
+    rm -r $tmp_dir
+
+    # Start the new node.
+    change_cluster_status start $new_id
+}
+
 function change_cluster_status {
     ensure_cluser_exists
 
@@ -220,7 +261,9 @@ function change_cluster_status {
 
 function attach_logs {
     ! cluster_exists && echo "Cluster '$cluster' does not exist." && exit 1
-    local container_name="${container_prefix}_$1"
+    local node=$1
+    [ "$1" -eq "999999" ] && node=$(get_container_count)
+    local container_name="${container_prefix}_$node"
     docker logs -f --tail=5 $container_name
 }
 
@@ -250,6 +293,9 @@ function sync_contract_bundle {
         sync_instance $i &
     done
     wait
+
+    # Cleanup the original contract bundle dir which is used to sync from.
+    rm -r $bundle_mount/*
 }
 
 function validate_port_begin {
@@ -270,6 +316,8 @@ elif [ $command = "start" ]; then
     change_cluster_status start $2
 elif [ $command = "stop" ]; then
     change_cluster_status stop $2
+elif [ $command = "join" ]; then
+    join_node
 elif [ $command = "logs" ]; then
     ! validate_node_num_arg $2 && echo "Usage: logs <node id>" && exit 1
     attach_logs $2

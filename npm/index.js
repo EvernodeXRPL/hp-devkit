@@ -1,7 +1,7 @@
 #! /usr/bin/env node
 
 const { program } = require('commander');
-const { version, codeGen, deploy, clean, logs, start, stop, update, uninstall } = require('./lib/command-handler');
+const { version, codeGen, deploy, clean, logs, start, stop, join, update, uninstall } = require('./lib/command-handler');
 
 program
     .command('version')
@@ -29,14 +29,19 @@ program
     .action(logs);
 
 program
-    .command('start <node-number>')
-    .description('hpdevkit start <node-number>')
+    .command('start [node-number]')
+    .description('hpdevkit start [node-number]')
     .action(start);
 
 program
-    .command('stop <node-number>')
-    .description('hpdevkit stop <node-number>')
+    .command('stop [node-number]')
+    .description('hpdevkit stop [node-number]')
     .action(stop);
+
+program
+    .command('join')
+    .description('hpdevkit join')
+    .action(join);
 
 program
     .command('update')
