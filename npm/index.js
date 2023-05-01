@@ -39,9 +39,9 @@ program
     .action(commands.stop);
 
 program
-    .command('join')
-    .description('Create a fresh node and join the existing cluster.')
-    .action(commands.join);
+    .command('spawn')
+    .description('Create a fresh node which connects to the existing cluster.')
+    .action(commands.spawn);
 
 program
     .command('status')

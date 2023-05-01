@@ -14,12 +14,12 @@ user_port_begin=$HP_USER_PORT_BEGIN
 peer_port_begin=$HP_PEER_PORT_BEGIN
 
 if [ "$command" = "create" ] || [ "$command" = "bindmesh" ] || [ "$command" = "destroy" ] || \
-    [ "$command" = "start" ] || [ "$command" = "stop" ] || [ "$command" = "join" ] || \
+    [ "$command" = "start" ] || [ "$command" = "stop" ] || [ "$command" = "spawn" ] || \
     [ "$command" = "logs" ] || [ "$command" = "sync" ] || [ "$command" = "status" ] ; then
     echo "sub-command: $command"
 else
     echo "Invalid sub-command."
-    echo "Expected: create | destroy | start | stop | join | logs | sync | status"
+    echo "Expected: create | destroy | start | stop | spawn | logs | sync | status"
     exit 1
 fi
 
@@ -202,14 +202,14 @@ function destroy_cluster {
     exists "network" $network && docker network rm $network
 }
 
-function join_node {
+function spawn_node {
     ensure_cluser_exists
 
     local old_count=$(get_container_count)
     local new_id=$((old_count+1))
     create_instance $new_id
 
-    local tmp_dir=$(mktemp -d /tmp/hpdevkit.join.XXXXXX)
+    local tmp_dir=$(mktemp -d /tmp/hpdevkit.spawn.XXXXXX)
     local node1_cfg=$(contract_dir_mount_path 1)/cfg/hp.cfg
     local new_cfg=$(contract_dir_mount_path $new_id)/cfg/hp.cfg
 
@@ -320,8 +320,8 @@ elif [ $command = "start" ]; then
     change_cluster_status start $2
 elif [ $command = "stop" ]; then
     change_cluster_status stop $2
-elif [ $command = "join" ]; then
-    join_node
+elif [ $command = "spawn" ]; then
+    spawn_node
 elif [ $command = "logs" ]; then
     ! validate_node_num_arg $2 && echo "Usage: logs <node id>" && exit 1
     attach_logs $2

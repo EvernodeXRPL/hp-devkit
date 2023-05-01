@@ -72,10 +72,10 @@ function deploy(contractPath) {
     }
 }
 
-function join() {
-    info(`command: join (cluster: ${appenv.cluster})`);
+function spawn() {
+    info(`command: spawn (cluster: ${appenv.cluster})`);
 
-    executeOnManagementContainer('cluster join && cluster logs 999999');
+    executeOnManagementContainer('cluster spawn && cluster logs 999999');
 }
 
 function clean() {
@@ -163,7 +163,7 @@ module.exports = {
     logs,
     start,
     stop,
-    join,
+    spawn,
     status,
     update,
     uninstall
