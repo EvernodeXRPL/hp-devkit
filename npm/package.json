@@ -3,6 +3,10 @@
   "version": "0.5.7",
   "description": "Developer toolkit for HotPocket smart contract development",
   "scripts": {
+    "lint": "./node_modules/.bin/eslint *.js",
+    "build": "npm run lint && ncc build index.js -o dist/",
+    "bundle": "npm run build && ./clean-pkg.sh",
+    "publish": "npm run bundle && cp README.md dist && npm publish ./dist",
     "install": "node scripts/install.js"
   },
   "keywords": [
@@ -15,6 +19,9 @@
   "license": "MIT",
   "dependencies": {
     "commander": "9.4.0"
+  },
+  "devDependencies": {
+    "eslint": "8.3.0"
   },
   "bin": {
     "hpdevkit": "./index.js"
