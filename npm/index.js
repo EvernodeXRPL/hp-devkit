@@ -1,52 +1,62 @@
 #! /usr/bin/env node
 
 const { program } = require('commander');
-const { version, codeGen, deploy, clean, logs, start, stop, update, uninstall } = require('./lib/command-handler');
+const commands = require('./lib/commands');
 
 program
     .command('version')
-    .description('hpdevkit version')
-    .action(version);
+    .description('Display the hpdevkit version.')
+    .action(commands.version);
 
 program
     .command('gen <platform> <app-type> <project-name>')
-    .description('hpdevkit gen <platform> <app-type> <project-name>')
-    .action(codeGen);
+    .description('Generate HotPocket application development projects.')
+    .action(commands.codeGen);
 
 program
     .command('deploy <contract-path>')
-    .description('hpdevkit deploy <contract-path>')
-    .action(deploy);
+    .description('Deploy the specified directory to a HotPocket cluster.')
+    .action(commands.deploy);
 
 program
     .command('clean')
-    .description('hpdevkit clean')
-    .action(clean);
+    .description('Destroy the HotPocket cluster.')
+    .action(commands.clean);
 
 program
     .command('logs <node-number>')
-    .description('hpdevkit logs <node-number>')
-    .action(logs);
+    .description('Display logs of the specified node.')
+    .action(commands.logs);
 
 program
-    .command('start <node-number>')
-    .description('hpdevkit start <node-number>')
-    .action(start);
+    .command('start [node-number]')
+    .description('Start the specified node. Starts all nodes if unspecified.')
+    .action(commands.start);
 
 program
-    .command('stop <node-number>')
-    .description('hpdevkit stop <node-number>')
-    .action(stop);
+    .command('stop [node-number]')
+    .description('Stop the specified node. Stops all nodes if unspecified.')
+    .action(commands.stop);
+
+program
+    .command('spawn')
+    .description('Create a fresh node which connects to the existing cluster.')
+    .action(commands.spawn);
+
+program
+    .command('status')
+    .description('Display status of running nodes.')
+    .action(commands.status);
 
 program
     .command('update')
-    .description('hpdevkit update')
-    .action(update);
+    .description('Update hpdevkit.')
+    .action(commands.update);
 
 program
     .command('uninstall')
-    .description('uninstall')
-    .action(uninstall);
+    .description('Uninstall hpdevkit.')
+    .action(commands.uninstall);
 
 try {
     program.parse();

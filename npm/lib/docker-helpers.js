@@ -3,7 +3,6 @@ const { exec } = require("./child-proc");
 const { log, info } = require("./logger");
 
 const GLOBAL_PREFIX = "hpdevkit";
-const VERSION = "0.1.0";
 
 const CONSTANTS = {
     npmPackageName: `hpdevkit`,
@@ -12,7 +11,7 @@ const CONSTANTS = {
     network: `${GLOBAL_PREFIX}_${appenv.cluster}_net`,
     containerPrefix: `${GLOBAL_PREFIX}_${appenv.cluster}_node`,
     bundleMount: `${GLOBAL_PREFIX}_vol/contract_bundle`,
-    deploymentContainerName: `${GLOBAL_PREFIX}_${appenv.cluster}_deploymgr`,
+    managementContainerName: `${GLOBAL_PREFIX}_${appenv.cluster}_deploymgr`,
     confOverrideFile: "hp.cfg.override",
     codegenOutputDir: "/codegen-output",
     codegenContainerName: `${GLOBAL_PREFIX}_codegen`,
@@ -20,7 +19,7 @@ const CONSTANTS = {
     prerequisiteInstaller: "install.sh"
 };
 
-function runOnContainer(name, detached, autoRemove, mountStock, mountVolume, entryCmd, entryPoint, interactive = true, restart = null) {
+function runOnNewContainer(name, detached, autoRemove, mountSock, mountVolume, entryCmd, entryPoint, interactive = true, restart = null) {
     command = `docker run`;
 
     if (interactive)
@@ -35,7 +34,7 @@ function runOnContainer(name, detached, autoRemove, mountStock, mountVolume, ent
     if (autoRemove)
         command += " --rm";
 
-    if (mountStock)
+    if (mountSock)
         command += " --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock";
 
     if (mountVolume)
@@ -71,6 +70,15 @@ function executeOnContainer(name, cmd) {
         exec(`docker exec ${name}  /bin/bash -c "${cmd}"`, true);
 }
 
+function executeOnManagementContainer(cmd) {
+    if (!isExists(CONSTANTS.managementContainerName)) {
+        info(`cluster '${appenv.cluster}' not found.`)
+        return;
+    }
+
+    executeOnContainer(CONSTANTS.managementContainerName, cmd)
+}
+
 function isExists(name, type = null) {
     try {
         const res = exec(`docker ${type === 'image' ? 'image ' : ''}inspect ${name}`);
@@ -85,26 +93,26 @@ function isExists(name, type = null) {
 }
 
 function initializeDeploymentCluster() {
-    if (!isExists(CONSTANTS.deploymentContainerName)) {
+    if (!isExists(CONSTANTS.managementContainerName)) {
         log("\nInitializing deployment cluster");
 
         // Stop cluster if running. Create cluster if not exists.
-        runOnContainer(CONSTANTS.deploymentContainerName, null, true, true, null, 'cluster stop ; cluster create', null);
+        runOnNewContainer(CONSTANTS.managementContainerName, null, true, true, null, 'cluster stop ; cluster create', null);
 
         // Spin up management container.
-        runOnContainer(CONSTANTS.deploymentContainerName, true, false, true, true, null, null, true, 'unless-stopped');
+        runOnNewContainer(CONSTANTS.managementContainerName, true, false, true, true, null, null, true, 'unless-stopped');
 
         // Bind the instance mesh network config together.
-        executeOnContainer(CONSTANTS.deploymentContainerName, 'cluster bindmesh');
+        executeOnContainer(CONSTANTS.managementContainerName, 'cluster bindmesh');
     }
 }
 
 function teardownDeploymentCluster() {
-    if (isExists(CONSTANTS.deploymentContainerName)) {
-        exec(`docker stop ${CONSTANTS.deploymentContainerName}`);
-        exec(`docker rm ${CONSTANTS.deploymentContainerName}`);
+    if (isExists(CONSTANTS.managementContainerName)) {
+        exec(`docker stop ${CONSTANTS.managementContainerName}`);
+        exec(`docker rm ${CONSTANTS.managementContainerName}`);
     }
-    runOnContainer(null, null, true, true, null, "cluster stop ; cluster destroy", null, false);
+    runOnNewContainer(null, null, true, true, null, "cluster stop ; cluster destroy", null, false);
 }
 
 function updateDockerImages() {
@@ -112,15 +120,16 @@ function updateDockerImages() {
     exec(`docker pull ${appenv.instanceImage}`, true);
 
     // Clear if there's already deployed cluster since they are outdated now.
-    if (isExists(CONSTANTS.deploymentContainerName)) {
+    if (isExists(CONSTANTS.managementContainerName)) {
         info('\nCleaning the deployed contracts...');
         teardownDeploymentCluster();
     }
 }
 
 module.exports = {
-    runOnContainer,
+    runOnNewContainer,
     executeOnContainer,
+    executeOnManagementContainer,
     isExists,
     initializeDeploymentCluster,
     teardownDeploymentCluster,

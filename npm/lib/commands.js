@@ -4,12 +4,12 @@ const { exec } = require('./child-proc');
 const {
     CONSTANTS,
     initializeDeploymentCluster,
-    runOnContainer,
-    executeOnContainer,
+    runOnNewContainer,
+    executeOnManagementContainer,
     teardownDeploymentCluster,
     isExists,
     updateDockerImages
-} = require('./common');
+} = require('./docker-helpers');
 const { success, error, info, warn } = require('./logger');
 
 function version() {
@@ -37,7 +37,7 @@ function codeGen(platform, apptype, projName) {
     }
 
     try {
-        runOnContainer(CONSTANTS.codegenContainerName, null, null, null, null, `${platform} ${apptype} ${projName}`, 'codegen');
+        runOnNewContainer(CONSTANTS.codegenContainerName, null, null, null, null, `${platform} ${apptype} ${projName}`, 'codegen');
         exec(`docker cp ${CONSTANTS.codegenContainerName}:${CONSTANTS.codegenOutputDir} ./${projName}`);
         success(`Project '${projName}' created.`);
     }
@@ -60,16 +60,22 @@ function deploy(contractPath) {
         `rm -rf ${CONSTANTS.bundleMount}` :
         `mkdir -p ${CONSTANTS.bundleMount} && rm -rf ${CONSTANTS.bundleMount}/* ${CONSTANTS.bundleMount}/.??*`;
 
-    executeOnContainer(CONSTANTS.deploymentContainerName, prepareBundleDir);
-    exec(`docker cp ${contractPath} "${CONSTANTS.deploymentContainerName}:${CONSTANTS.bundleMount}"`);
+    executeOnManagementContainer(prepareBundleDir);
+    exec(`docker cp ${contractPath} "${CONSTANTS.managementContainerName}:${CONSTANTS.bundleMount}"`);
 
     // Sync contract bundle to all instance directories in the cluster.
-    executeOnContainer(CONSTANTS.deploymentContainerName, 'cluster stop ; cluster sync ; cluster start');
+    executeOnManagementContainer('cluster stop ; cluster sync ; cluster start');
 
     if (appenv.defaultNode > 0) {
         info(`Streaming logs of node ${appenv.defaultNode}:`);
-        executeOnContainer(CONSTANTS.deploymentContainerName, `cluster logs ${appenv.defaultNode}`);
+        executeOnManagementContainer(`cluster logs ${appenv.defaultNode}`);
     }
+}
+
+function spawn() {
+    info(`command: spawn (cluster: ${appenv.cluster})`);
+
+    executeOnManagementContainer('cluster spawn && cluster logs 999999');
 }
 
 function clean() {
@@ -81,19 +87,25 @@ function clean() {
 function logs(nodeNumber) {
     info(`command: logs (cluster: ${appenv.cluster})`);
 
-    runOnContainer(null, null, true, true, null, `logs ${nodeNumber}`, 'cluster');
+    executeOnManagementContainer(`cluster logs ${nodeNumber}`);
 }
 
 function start(nodeNumber) {
     info(`command: start (cluster: ${appenv.cluster})`);
 
-    runOnContainer(null, null, true, true, null, `start ${nodeNumber}`, 'cluster');
+    executeOnManagementContainer(`cluster start ${nodeNumber}`);
 }
 
 function stop(nodeNumber) {
     info(`command: stop (cluster: ${appenv.cluster})`);
 
-    runOnContainer(null, null, true, true, null, `stop ${nodeNumber}`, 'cluster');
+    executeOnManagementContainer(`cluster stop ${nodeNumber}`);
+}
+
+function status() {
+    info(`command: status (cluster: ${appenv.cluster})`);
+
+    executeOnManagementContainer(`cluster status`);
 }
 
 function update() {
@@ -124,7 +136,7 @@ function uninstall() {
     exec(`npm -g uninstall ${CONSTANTS.npmPackageName}`, true);
 
     // Remove deployment cluster if exist.
-    if (isExists(CONSTANTS.deploymentContainerName)) {
+    if (isExists(CONSTANTS.managementContainerName)) {
         info('\nCleaning the deployed contracts...');
         teardownDeploymentCluster();
     }
@@ -151,6 +163,8 @@ module.exports = {
     logs,
     start,
     stop,
+    spawn,
+    status,
     update,
     uninstall
 };
