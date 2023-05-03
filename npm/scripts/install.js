@@ -1,3 +1,3 @@
-const { updateDockerImages } = require("../lib/common");
+const { updateDockerImages } = require("../lib/docker-helpers");
 
 updateDockerImages();
