@@ -5,7 +5,7 @@ const appenv = {
     clusterSize: process.env.HP_CLUSTER_SIZE || 3,
     defaultNode: process.env.HP_DEFAULT_NODE || 1,
     devkitImage: process.env.HP_DEVKIT_IMAGE || 'evernodedev/hpdevkit',
-    instanceImage: process.env.HP_INSTANCE_IMAGE || 'evernodedev/hotpocket:0.6.0-ubt.20.04-njs.16',
+    instanceImage: process.env.HP_INSTANCE_IMAGE || 'evernodedev/hotpocket:0.6.1-ubt.20.04-njs.16',
     hpUserPortBegin: process.env.HP_USER_PORT_BEGIN || 8081,
     hpPeerPortBegin: process.env.HP_PEER_PORT_BEGIN || 22861,
 }

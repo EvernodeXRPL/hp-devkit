@@ -1,6 +1,6 @@
 {
   "name": "hpdevkit",
-  "version": "0.5.7",
+  "version": "0.5.8",
   "description": "Developer toolkit for HotPocket smart contract development",
   "scripts": {
     "lint": "./node_modules/.bin/eslint *.js",
