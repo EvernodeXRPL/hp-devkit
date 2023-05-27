@@ -225,7 +225,7 @@ function spawn_node {
 
     jq -s '.[0] * .[1]' $tmp_dir/from-node1.json $tmp_dir/from-newnode.json > $tmp_dir/merged.json
 
-    # Inject the list of all known peers.
+    # Construct the list of all known peers.
     local all_peers
     for ((i=1; i<=$old_count; i++));
     do  
@@ -233,8 +233,12 @@ function spawn_node {
         let peer_port=$(($peer_port_begin + $i - 1))
         all_peers[i]="node$i:${peer_port}"
     done
+
+    # Inject the new node configuration to the cfg.
     local peers_json=$(joinarr all_peers $old_count -1)
-    jq ".mesh.known_peers=$peers_json" $tmp_dir/merged.json > $new_cfg
+    let peer_port=$(($peer_port_begin + $new_id - 1))
+    let user_port=$(($user_port_begin + $new_id - 1))
+    jq ".mesh.port=$peer_port | .user.port=$user_port | .mesh.known_peers=$peers_json" $tmp_dir/merged.json > $new_cfg
 
     # Cleanup temp dir.
     rm -r $tmp_dir
