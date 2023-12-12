@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker build -t evernodedev/hpdevkit .
+docker build -t evernode/hpdevkit .

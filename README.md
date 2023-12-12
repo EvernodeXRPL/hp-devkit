@@ -21,14 +21,14 @@ Docker image containing cluster management shell scripts.
 
 ```
 cd docker
-docker build -t evernodedev/hpdevkit .
-docker push evernodedev/hpdevkit
+docker build -t evernode/hpdevkit .
+docker push evernode/hpdevkit
 ```
 
 ### Run
 
 ```
-docker run -it --rm --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock evernodedev/hpdevkit cluster create 2
+docker run -it --rm --mount type=bind,src=/var/run/docker.sock,dst=/var/run/docker.sock evernode/hpdevkit cluster create 2
 ```
 
 ## hpdevkit npm build
