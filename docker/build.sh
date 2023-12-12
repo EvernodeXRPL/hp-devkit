@@ -1,5 +1,5 @@
 #!/bin/bash
 
-cp ../LICENSE .
+cp ../LICENCE .
 docker build -t evernodedev/hpdevkit .
-rm LICENSE
+rm LICENCE

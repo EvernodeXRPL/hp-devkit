@@ -1,11 +1,11 @@
 {
   "name": "hpdevkit",
   "version": "0.6.5",
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "SEE LICENCE IN LICENCE",
   "description": "Developer toolkit for HotPocket smart contract development",
   "scripts": {
     "lint": "./node_modules/.bin/eslint *.js",
-    "build": "npm run lint && ncc build index.js -o dist/ && cp ../LICENSE dist/",
+    "build": "npm run lint && ncc build index.js -o dist/ && cp ../LICENCE dist/",
     "bundle": "npm run build && ./clean-pkg.sh",
     "publish": "npm run bundle && cp README.md dist && npm publish ./dist",
     "install": "node scripts/install.js"
