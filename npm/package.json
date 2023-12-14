@@ -1,11 +1,11 @@
 {
   "name": "hpdevkit",
   "version": "0.6.5",
-  "license": "SEE LICENCE IN LICENCE",
+  "license": "SEE LICENSE IN https://raw.githubusercontent.com/EvernodeXRPL/evernode-resources/main/license/evernode-license.pdf",
   "description": "Developer toolkit for HotPocket smart contract development",
   "scripts": {
     "lint": "./node_modules/.bin/eslint *.js",
-    "build": "npm run lint && ncc build index.js -o dist/ && cp ../LICENCE dist/",
+    "build": "npm run lint && ncc build index.js -o dist/ && cp ../LICENSE.pdf dist/",
     "bundle": "npm run build && ./clean-pkg.sh",
     "publish": "npm run bundle && cp README.md dist && npm publish ./dist",
     "install": "node scripts/install.js"
