@@ -5,7 +5,7 @@
   "description": "Developer toolkit for HotPocket smart contract development",
   "scripts": {
     "lint": "./node_modules/.bin/eslint *.js",
-    "build": "npm run lint && ncc build index.js -o dist/ && cp ../LICENSE.pdf dist/",
+    "build": "npm run lint && ncc build index.js -o dist/ && cp ../evernode-license.pdf dist/",
     "bundle": "npm run build && ./clean-pkg.sh",
     "publish": "npm run bundle && cp README.md dist && npm publish ./dist",
     "install": "node scripts/install.js"

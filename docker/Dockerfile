@@ -27,4 +27,4 @@ COPY --from=builder /build/scripts/codegen.sh /usr/bin/codegen
 COPY --from=builder /build/jq /usr/bin/jq
 
 COPY code-templates /code-templates
-COPY LICENSE.pdf /evernode-license/LICENSE.pdf
+COPY evernode-license.pdf /evernode-license/evernode-license.pdf
