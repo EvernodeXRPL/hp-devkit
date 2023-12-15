@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker push evernodedev/hpdevkit
+docker push evernode/hpdevkit

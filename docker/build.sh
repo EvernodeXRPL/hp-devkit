@@ -1,5 +1,5 @@
 #!/bin/bash
 
 cp ../evernode-license.pdf .
-docker build -t evernodedev/hpdevkit .
+docker build -t evernode/hpdevkit .
 rm evernode-license.pdf
