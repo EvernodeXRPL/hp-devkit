@@ -30,7 +30,7 @@ async function clientApp() {
     console.log('My public key is: ' + pkhex);
 
     const ip = process.argv[2] || 'localhost';
-    const port = process.argv[3] || '8080';
+    const port = process.argv[3] || '8081';
     const client = await HotPocket.createClient(
         ['wss://' + ip + ':' + port],
         userKeyPair,

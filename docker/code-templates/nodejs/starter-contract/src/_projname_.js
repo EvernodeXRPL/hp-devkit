@@ -17,7 +17,7 @@ export class _projname_ {
             // Retrieved previously saved data and return to the user.
             const data = await this.getData();
             await this.sendOutput(user, {
-                type: 'data_result',
+                type: 'dataResult',
                 data: data
             })
         }

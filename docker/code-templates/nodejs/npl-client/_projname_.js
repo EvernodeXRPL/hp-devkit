@@ -40,11 +40,11 @@ async function clientApp() {
             // If JSON.parse error occurred it'll be caught by this try catch.
             try {
                 const result = JSON.parse(output);
-                if (result.type == "dataResult") {
-                    console.log(`(ledger:${r.ledgerSeqNo})>> ${result.message}`);
-                }
-                else if (result.type == "error") {
-                    console.log(`(ledger:${r.ledgerSeqNo})>> Error: ${result.error}`);
+                if (result.type == "rndResult") {
+                    if (result.status == "ok")
+                        console.log(`(ledger:${r.ledgerSeqNo})>> ${result.message}`);
+                    else
+                        console.log(`(ledger:${r.ledgerSeqNo})>> Upload failed. reason: ${result.error}`);
                 }
                 else {
                     console.log("Unknown contract output.");
@@ -61,17 +61,10 @@ async function clientApp() {
     const input_pump = () => {
         rl.question('', async (inp) => {
             let input;
-            if (inp.startsWith("set ")) {
+            if (inp.startsWith("rnd")) {
 
                 input = await client.submitContractInput(JSON.parse({
-                    type: "set",
-                    data: inp.substr(4)
-                }));
-            }
-            else if (inp.startsWith("get")) {
-
-                input = await client.submitContractInput(JSON.parse({
-                    type: "get"
+                    type: "rnd"
                 }));
             }
             else {

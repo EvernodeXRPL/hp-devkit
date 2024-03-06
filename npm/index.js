@@ -9,6 +9,11 @@ program
     .action(commands.version);
 
 program
+    .command('list <platform>')
+    .description('Lists existing templates.')
+    .action(commands.list);
+
+program
     .command('gen <platform> <app-type> <project-name>')
     .description('Generate HotPocket application development projects.')
     .action(commands.codeGen);

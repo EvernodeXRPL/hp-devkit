@@ -30,7 +30,7 @@ async function clientApp() {
     console.log('My public key is: ' + pkhex);
 
     const ip = process.argv[2] || 'localhost';
-    const port = process.argv[3] || '8080';
+    const port = process.argv[3] || '8081';
     const client = await HotPocket.createClient(
         ['wss://' + ip + ':' + port],
         userKeyPair,
@@ -72,19 +72,19 @@ async function clientApp() {
                 const result = bson.deserialize(output);
                 if (result.type == "uploadResult") {
                     if (result.status == "ok")
-                        console.log(`(ledger:${r.ledgerSeqNo})>> ${result.message}`);
+                        console.log(`(ledger:${r.ledgerSeqNo})>> ${result.status}`);
                     else
                         console.log(`(ledger:${r.ledgerSeqNo})>> Upload failed. reason: ${result.status}`);
                 }
                 else if (result.type == "deleteResult") {
                     if (result.status == "ok")
-                        console.log(`(ledger:${r.ledgerSeqNo})>> ${result.message}`);
+                        console.log(`(ledger:${r.ledgerSeqNo})>> ${result.status}`);
                     else
                         console.log(`(ledger:${r.ledgerSeqNo})>> Delete failed. reason: ${result.status}`);
                 }
                 else if (result.type == "downloadResult") {
                     if (result.status == "ok")
-                        console.log(`(ledger:${r.ledgerSeqNo})>> ${result.message}`);
+                        console.log(`(ledger:${r.ledgerSeqNo})>> ${result.content}`);
                     else
                         console.log(`(ledger:${r.ledgerSeqNo})>> Download failed. reason: ${result.status}`);
                 }

@@ -24,6 +24,7 @@ FROM ubuntu:focal as runner
 COPY --from=builder /build/docker-extracted/usr/bin/docker /usr/bin/
 COPY --from=builder /build/scripts/cluster.sh /usr/bin/cluster
 COPY --from=builder /build/scripts/codegen.sh /usr/bin/codegen
+COPY --from=builder /build/scripts/templates.sh /usr/bin/templates
 COPY --from=builder /build/jq /usr/bin/jq
 
 COPY code-templates /code-templates

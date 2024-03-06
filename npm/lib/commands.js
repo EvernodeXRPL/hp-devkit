@@ -28,6 +28,21 @@ function version() {
     error(`\n${CONSTANTS.npmPackageName} is not installed.`);
 }
 
+function list(platform) {
+    info("List templates\n");
+
+    try {
+        runOnNewContainer(CONSTANTS.codegenContainerName, null, null, null, null, `list ${platform}`, 'templates');
+    }
+    catch (e) {
+        error(`Listing templates failed.`);
+    }
+    finally {
+        if (isExists(CONSTANTS.codegenContainerName))
+            exec(`docker rm ${CONSTANTS.codegenContainerName}`, false);
+    }
+}
+
 function codeGen(platform, apptype, projName) {
     info("Code generator\n");
 
@@ -157,6 +172,7 @@ function uninstall() {
 
 module.exports = {
     version,
+    list,
     codeGen,
     deploy,
     clean,

@@ -1,8 +1,5 @@
-const fs = require('fs').promises;
-
-// This sample application writes and reads from a simple text file to serve user requests.
-// Real-world applications may use a proper local database like sqlite.
-const dataFile = 'datafile.txt'
+const fs = require('fs');
+const bson = require('bson');
 
 export class _projname_ {
     sendOutput; // This function must be wired up by the caller.
@@ -48,7 +45,6 @@ export class _projname_ {
                         error: 'Write is not supported in readonly mode'
                     })
                 }
-
             }
         }
         else if (msg.type == "delete") {
@@ -97,21 +93,6 @@ export class _projname_ {
                     fileName: msg.fileName
                 }));
             }
-        }
-    }
-
-    async setData(data) {
-        // HotPocket subjects data-on-disk to consensus.
-        await fs.writeFile(dataFile, data);
-    }
-
-    async getData() {
-        try {
-            return (await fs.readFile(dataFile)).toString();
-        }
-        catch {
-            console.log('Data file not created yet. Returning empty data.');
-            return '';
         }
     }
 }

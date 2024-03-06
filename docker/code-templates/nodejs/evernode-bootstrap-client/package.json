@@ -1,6 +1,7 @@
 {
     "name": "_projname_",
     "dependencies": {
-        "hotpocket-js-client": "0.5.4"
+        "bson": "6.4.0",
+        "hotpocket-js-client": "0.5.6"
     }
 }
