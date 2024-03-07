@@ -45,7 +45,7 @@ async function clientApp() {
             else {
                 console.log("Unknown contract output.");
             }
-    });
+        });
     });
 
     console.log("Ready to accept inputs.");

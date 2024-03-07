@@ -4,7 +4,7 @@ const fs = require('fs').promises;
 // Real-world applications may use a proper local database like sqlite.
 const dataFile = 'datafile.txt'
 
-export class nplcontract {
+export class _projname_ {
     sendOutput; // This function must be wired up by the caller.
 
     async handleRequest(user, message, isReadOnly) {
