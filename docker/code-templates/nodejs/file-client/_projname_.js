@@ -67,36 +67,40 @@ async function clientApp() {
     client.on(HotPocket.events.contractOutput, (r) => {
 
         r.outputs.forEach(output => {
-            // If bson.deserialize error occurred it'll be caught by this try catch.
-            try {
-                const result = bson.deserialize(output);
-                if (result.type == "uploadResult") {
-                    if (result.status == "ok")
-                        console.log(`(ledger:${r.ledgerSeqNo})>> ${result.status}`);
-                    else
-                        console.log(`(ledger:${r.ledgerSeqNo})>> Upload failed. reason: ${result.status}`);
-                }
-                else if (result.type == "deleteResult") {
-                    if (result.status == "ok")
-                        console.log(`(ledger:${r.ledgerSeqNo})>> ${result.status}`);
-                    else
-                        console.log(`(ledger:${r.ledgerSeqNo})>> Delete failed. reason: ${result.status}`);
-                }
-                else if (result.type == "downloadResult") {
-                    if (result.status == "ok")
-                        console.log(`(ledger:${r.ledgerSeqNo})>> ${result.content}`);
-                    else
-                        console.log(`(ledger:${r.ledgerSeqNo})>> Download failed. reason: ${result.status}`);
-                }
-                else {
-                    console.log("Unknown contract output.");
-                }
-            }
-            catch (e) {
-                console.log(e)
-            }
+            handleOutput(output, r.ledgerSeqNo);
         });
     });
+
+    const handleOutput = (output, ledgerSeqNo) => {
+        // If bson.deserialize error occurred it'll be caught by this try catch.
+        try {
+            const result = bson.deserialize(output);
+            if (result.type == "uploadResult") {
+                if (result.status == "ok")
+                    console.log(`(ledger:${ledgerSeqNo})>> ${result.status}`);
+                else
+                    console.log(`(ledger:${ledgerSeqNo})>> Upload failed. reason: ${result.status}`);
+            }
+            else if (result.type == "deleteResult") {
+                if (result.status == "ok")
+                    console.log(`(ledger:${ledgerSeqNo})>> ${result.status}`);
+                else
+                    console.log(`(ledger:${ledgerSeqNo})>> Delete failed. reason: ${result.status}`);
+            }
+            else if (result.type == "downloadResult") {
+                if (result.status == "ok")
+                    console.log(`(ledger:${ledgerSeqNo})>> ${result.content}`);
+                else
+                    console.log(`(ledger:${ledgerSeqNo})>> Download failed. reason: ${result.status}`);
+            }
+            else {
+                console.log("Unknown contract output.");
+            }
+        }
+        catch (e) {
+            console.log(e)
+        }
+    }
 
     console.log("Ready to accept inputs.");
 
@@ -106,10 +110,13 @@ async function clientApp() {
             if (inp.startsWith("download ")) {
                 const fileName = inp.substr(9);
 
-                input = await client.submitContractInput(bson.serialize({
+                // Read only inputs can be sent as read requests, So it'll be quick.
+                const output = await client.submitContractReadRequest(bson.serialize({
                     type: "download",
                     fileName: fileName,
                 }));
+
+                handleOutput(output, (await client.getStatus()).ledgerSeqNo);
             }
             else if (inp.startsWith("upload ")) {
 
