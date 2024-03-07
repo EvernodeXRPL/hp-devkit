@@ -35,26 +35,22 @@ async function clientApp() {
 
     // This will get fired when contract sends an output.
     client.on(HotPocket.events.contractOutput, (r) => {
-
         r.outputs.forEach(output => {
-            // If JSON.parse error occurred it'll be caught by this try catch.
-            try {
-                const result = JSON.parse(output);
-                if (result.type == "dataResult") {
-                    console.log(`(ledger:${r.ledgerSeqNo})>> ${result.message}`);
-                }
-                else if (result.type == "error") {
-                    console.log(`(ledger:${r.ledgerSeqNo})>> Error: ${result.error}`);
-                }
-                else {
-                    console.log("Unknown contract output.");
-                }
-            }
-            catch (e) {
-                console.log(e)
-            }
+            handleOutput(output, r.ledgerSeqNo);
         });
     });
+
+    const handleOutput = (output, ledgerSeqNo) => {
+        if (output.type == "dataResult") {
+            console.log(`(ledger:${ledgerSeqNo})>> ${output.data}`);
+        }
+        else if (output.type == "error") {
+            console.log(`(ledger:${ledgerSeqNo})>> Error: ${output.error}`);
+        }
+        else {
+            console.log("Unknown contract output.");
+        }
+    }
 
     console.log("Ready to accept inputs.");
 
@@ -63,16 +59,19 @@ async function clientApp() {
             let input;
             if (inp.startsWith("set ")) {
 
-                input = await client.submitContractInput(JSON.parse({
+                input = await client.submitContractInput(JSON.stringify({
                     type: "set",
                     data: inp.substr(4)
                 }));
             }
             else if (inp.startsWith("get")) {
 
-                input = await client.submitContractInput(JSON.parse({
+                // Read only inputs can be sent as read requests, So it'll be quick.
+                const output = await client.submitContractReadRequest(JSON.stringify({
                     type: "get"
                 }));
+
+                handleOutput(output, (await client.getStatus()).ledgerSeqNo);
             }
             else {
                 console.log("Invalid command. [set <data>] or [get] expected.")

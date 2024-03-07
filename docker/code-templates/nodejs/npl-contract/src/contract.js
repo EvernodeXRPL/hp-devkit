@@ -26,7 +26,7 @@ async function contract(ctx) {
     // Access the HotPocket config.
     const hpconfig = await ctx.getConfig();
     // Wait only for half of roundtime for random number generation.
-    const timeout = Math.ceil(hpconfig.consensus.roundtime / 2);
+    const timeout = Math.ceil(hpconfig.consensus.roundtime);
 
 
     // Process user inputs.

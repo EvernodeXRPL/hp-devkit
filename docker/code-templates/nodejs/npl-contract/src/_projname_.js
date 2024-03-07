@@ -18,16 +18,16 @@ export class _projname_ {
 
                     let nplRes = [];
                     unl.onMessage((node, msg) => {
-                        nplRes.push({ pubkey: node.publicKey, number: msg });
+                        nplRes.push({ pubkey: node.publicKey, number: Number(msg.toString()) });
                         // Resolve once all are received
-                        if (nplRes.entries.length === unl.count()) {
+                        if (nplRes.length === unl.count()) {
                             clearTimeout(t);
-                            resolve(nplRes.sort((a, b) => a.msg - b.msg));
+                            resolve(nplRes.sort((a, b) => a.number - b.number));
                         }
                     });
                 });
 
-                await unl.send(Math.random());
+                await unl.send(Math.random().toString());
 
                 try {
                     const receipt = await promise;

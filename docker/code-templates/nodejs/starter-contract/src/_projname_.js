@@ -4,11 +4,10 @@ const fs = require('fs').promises;
 // Real-world applications may use a proper local database like sqlite.
 const dataFile = 'datafile.txt'
 
-export class _projname_ {
+export class nplcontract {
     sendOutput; // This function must be wired up by the caller.
 
     async handleRequest(user, message, isReadOnly) {
-
         // This sample application defines two simple messages. 'get' and 'set'.
         // It's up to the application to decide the structure and contents of messages.
 
@@ -26,6 +25,11 @@ export class _projname_ {
             if (!isReadOnly) {
                 // Save the provided data into storage.
                 await this.setData(message.data);
+
+                await this.sendOutput(user, {
+                    type: 'dataResult',
+                    data: 'success'
+                })
             }
             else {
                 await this.sendOutput(user, {

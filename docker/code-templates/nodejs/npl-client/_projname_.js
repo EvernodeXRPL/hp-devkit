@@ -35,25 +35,17 @@ async function clientApp() {
 
     // This will get fired when contract sends an output.
     client.on(HotPocket.events.contractOutput, (r) => {
-
         r.outputs.forEach(output => {
-            // If JSON.parse error occurred it'll be caught by this try catch.
-            try {
-                const result = JSON.parse(output);
-                if (result.type == "rndResult") {
-                    if (result.status == "ok")
-                        console.log(`(ledger:${r.ledgerSeqNo})>> ${result.message}`);
-                    else
-                        console.log(`(ledger:${r.ledgerSeqNo})>> Upload failed. reason: ${result.error}`);
-                }
-                else {
-                    console.log("Unknown contract output.");
-                }
+            if (output.type == "rndResult") {
+                if (output.status == "ok")
+                    console.log(`(ledger:${r.ledgerSeqNo})>> ${JSON.stringify(output)}`);
+                else
+                    console.log(`(ledger:${r.ledgerSeqNo})>> Rnd failed. reason: ${output.error}`);
             }
-            catch (e) {
-                console.log(e)
+            else {
+                console.log("Unknown contract output.");
             }
-        });
+    });
     });
 
     console.log("Ready to accept inputs.");
@@ -63,12 +55,12 @@ async function clientApp() {
             let input;
             if (inp.startsWith("rnd")) {
 
-                input = await client.submitContractInput(JSON.parse({
+                input = await client.submitContractInput(JSON.stringify({
                     type: "rnd"
                 }));
             }
             else {
-                console.log("Invalid command. [set <data>] or [get] expected.")
+                console.log("Invalid command. [rnd] expected.")
             }
 
             if (input) {
