@@ -41,6 +41,9 @@ async function clientApp() {
     });
 
     const handleOutput = (output, ledgerSeqNo) => {
+        if (output.type == "statResult") {
+            console.log(`(ledger:${ledgerSeqNo})>> ${output.data}`);
+        }
         if (output.type == "dataResult") {
             console.log(`(ledger:${ledgerSeqNo})>> ${output.data}`);
         }
@@ -57,8 +60,28 @@ async function clientApp() {
     const input_pump = () => {
         rl.question('', async (inp) => {
             let input;
-            if (inp.startsWith("set ")) {
-
+            if (inp.startsWith("stat")) {
+                // Get contract status by read request and contract input.
+                // This output means
+                // Read request - contract is deployed and excitable.
+                // Contract input - node are in sync.
+                if (inp.startsWith("stat contract")) {
+                    input = await client.submitContractInput(JSON.stringify({
+                        type: "stat"
+                    }));
+                }
+                else if (inp.startsWith("stat read")) {
+                    const output = await client.submitContractReadRequest(JSON.stringify({
+                        type: "stat"
+                    }));
+                    handleOutput(output, (await client.getStatus()).ledgerSeqNo);
+                }
+                else {
+                    const res = await client.getStatus();
+                    console.log(res);
+                }
+            }
+            else if (inp.startsWith("set ")) {
                 input = await client.submitContractInput(JSON.stringify({
                     type: "set",
                     data: inp.substr(4)

@@ -11,7 +11,15 @@ export class _projname_ {
         // This sample application defines two simple messages. 'get' and 'set'.
         // It's up to the application to decide the structure and contents of messages.
 
-        if (message.type == 'get') {
+        if (message.type == 'stat') {
+
+            // Send response as the status.
+            await this.sendOutput(user, {
+                type: 'statResult',
+                data: 'Contract is online'
+            })
+        }
+        else if (message.type == 'get') {
 
             // Retrieved previously saved data and return to the user.
             const data = await this.getData();
