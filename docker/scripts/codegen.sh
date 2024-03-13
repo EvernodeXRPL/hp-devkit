@@ -18,8 +18,8 @@ fi
 
 [ ! -d $templates_dir/$platform ] && echo "Invalid platform '$platform' specified." && exit 1
 [ ! -d $templates_dir/$platform/$apptype ] && echo "Invalid application type '$apptype' specified." && exit 1
-if ! [[ "$projname" =~ ^[a-z][a-z0-9_-]*$ ]]; then
-  echo "Invalid project name. Must be lowercase. Must start with a letter. Can only contain letters, numbers, dash and underscore."
+if ! [[ "$projname" =~ ^[a-z][a-z0-9_]*$ ]]; then
+  echo "Invalid project name. Must be lowercase. Must start with a letter. Can only contain letters, numbers, and underscore."
   exit 1
 fi
 
