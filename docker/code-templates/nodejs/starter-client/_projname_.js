@@ -44,7 +44,7 @@ async function clientApp() {
         if (output.type == "statResult") {
             console.log(`(ledger:${ledgerSeqNo})>> ${output.data}`);
         }
-        if (output.type == "dataResult") {
+        else if (output.type == "dataResult") {
             console.log(`(ledger:${ledgerSeqNo})>> ${output.data}`);
         }
         else if (output.type == "error") {
