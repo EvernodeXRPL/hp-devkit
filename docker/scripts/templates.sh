@@ -7,10 +7,20 @@ usage="Usage:
 
 if [ "$cmd" = "list" ]; then
   platform=$2
-  [ -z $platform ] && echo "Platform is required. $usage" && exit 1
-  [ ! -d "$templates_dir/$platform" ] && echo "There are no templates for platform: $platform." && exit 0
 
-  ls -1 "$templates_dir/$platform"
+  if [ ! -z $platform ]; then
+    platforms=("$templates_dir/$platform")
+  else
+    platforms="$templates_dir/*"
+  fi
+
+  for p in $platforms; do
+    [ ! -d "$p" ] && echo "There are no templates for platform: ${p##*/}." && exit 0
+    echo "$(tput bold)PLATFORM: ${p##*/}$(tput sgr0)"
+    for t in $(ls -1 "$p"); do
+      echo "  $t"
+    done
+  done
 fi
 
 exit 0

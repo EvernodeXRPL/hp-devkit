@@ -32,7 +32,7 @@ function list(platform) {
     info("List templates\n");
 
     try {
-        runOnNewContainer(CONSTANTS.codegenContainerName, null, null, null, null, `list ${platform}`, 'templates');
+        runOnNewContainer(CONSTANTS.codegenContainerName, null, null, null, null, platform ? `list ${platform}` : 'list', 'templates');
     }
     catch (e) {
         error(`Listing templates failed.`);

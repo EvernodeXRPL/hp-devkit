@@ -9,8 +9,8 @@ program
     .action(commands.version);
 
 program
-    .command('list <platform>')
-    .description('Lists existing templates.')
+    .command('list [platform]')
+    .description('Lists existing templates in the specified platform. Lists all templates in the all platforms if unspecified.')
     .action(commands.list);
 
 program
