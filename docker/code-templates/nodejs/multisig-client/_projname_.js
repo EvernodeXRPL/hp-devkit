@@ -45,7 +45,7 @@ async function clientApp() {
             if (output.status == "ok")
                 console.log(`(ledger:${ledgerSeqNo})>> `, output.data);
             else
-                console.log(`(ledger:${ledgerSeqNo})>> Upgrade failed. reason: `, output.error ?? output.status);
+                console.log(`(ledger:${ledgerSeqNo})>> Payment failed. reason: `, output.error ?? output.status);
         }
         else {
             console.log("Unknown contract output.", output);
