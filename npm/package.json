@@ -18,7 +18,8 @@
   ],
   "homepage": "https://github.com/HotPocketDev/evernode-sdk",
   "dependencies": {
-    "commander": "9.4.0"
+    "commander": "9.4.0",
+    "evernode-js-client": "0.6.43"
   },
   "devDependencies": {
     "eslint": "8.3.0"

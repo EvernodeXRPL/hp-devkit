@@ -11,6 +11,7 @@ const CONSTANTS = {
     network: `${GLOBAL_PREFIX}_${appenv.cluster}_net`,
     containerPrefix: `${GLOBAL_PREFIX}_${appenv.cluster}_node`,
     bundleMount: `${GLOBAL_PREFIX}_vol/contract_bundle`,
+    disparateDir: `disparate`,
     managementContainerName: `${GLOBAL_PREFIX}_${appenv.cluster}_deploymgr`,
     confOverrideFile: "hp.cfg.override",
     codegenOutputDir: "/codegen-output",
@@ -49,7 +50,7 @@ function runOnNewContainer(name, detached, autoRemove, mountSock, mountVolume, e
         command += ` --restart ${restart}`;
 
     command += ` -e CLUSTER=${appenv.cluster} -e CLUSTER_SIZE=${appenv.clusterSize} -e DEFAULT_NODE=${appenv.defaultNode} -e VOLUME=${CONSTANTS.volume} -e NETWORK=${CONSTANTS.network}`;
-    command += ` -e CONTAINER_PREFIX=${CONSTANTS.containerPrefix} -e VOLUME_MOUNT=${CONSTANTS.volumeMount} -e BUNDLE_MOUNT=${CONSTANTS.bundleMount} -e HOTPOCKET_IMAGE=${appenv.instanceImage}`;
+    command += ` -e CONTAINER_PREFIX=${CONSTANTS.containerPrefix} -e VOLUME_MOUNT=${CONSTANTS.volumeMount} -e BUNDLE_MOUNT=${CONSTANTS.bundleMount} -e DISPARATE_DIR=${CONSTANTS.disparateDir} -e HOTPOCKET_IMAGE=${appenv.instanceImage}`;
     command += ` -e CONFIG_OVERRIDES_FILE=${CONSTANTS.confOverrideFile} -e CODEGEN_OUTPUT=${CONSTANTS.codegenOutputDir}`;
     command += ` -e HP_USER_PORT_BEGIN=${appenv.hpUserPortBegin} -e HP_PEER_PORT_BEGIN=${appenv.hpPeerPortBegin}`;
 

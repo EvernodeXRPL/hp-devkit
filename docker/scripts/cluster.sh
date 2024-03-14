@@ -8,6 +8,7 @@ network=$NETWORK
 container_prefix=$CONTAINER_PREFIX
 volume_mount=$VOLUME_MOUNT
 bundle_mount=$BUNDLE_MOUNT
+disparate_dir=$DISPARATE_DIR
 hotpocket_image=$HOTPOCKET_IMAGE
 config_overrides_file=$CONFIG_OVERRIDES_FILE
 user_port_begin=$HP_USER_PORT_BEGIN
@@ -274,9 +275,13 @@ function attach_logs {
 function sync_instance {
     local node=$1
     local contract_dir=$(contract_dir_mount_path $node)
-    rm -rf $contract_dir/ledger_fs/*  $contract_dir/contract_fs/*
+    rm -rf $contract_dir/ledger_fs/* $contract_dir/contract_fs/*
     mkdir -p $contract_dir/contract_fs/seed
     cp -r $bundle_mount $contract_dir/contract_fs/seed/state
+    rm -r $contract_dir/contract_fs/seed/state/$disparate_dir
+
+    # Copy non-syncable files if exist.
+    [ -d "$bundle_mount/$disparate_dir/$i" ] && cp -r "$bundle_mount/$disparate_dir/$i/." "$contract_dir/contract_fs/seed/"
 
     # Merge contract config overrides.
     local cfg_file=$contract_dir/cfg/hp.cfg
