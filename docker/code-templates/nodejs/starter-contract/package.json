@@ -7,7 +7,7 @@
         "start": "npm run build && hpdevkit deploy dist"
     },
     "dependencies": {
-        "hotpocket-nodejs-contract": "^0.5.10",
+        "hotpocket-nodejs-contract": "^0.7.3",
         "@vercel/ncc": "0.34.0"
     }
 }

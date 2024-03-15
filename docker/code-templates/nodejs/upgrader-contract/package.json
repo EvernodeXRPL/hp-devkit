@@ -8,7 +8,7 @@
     },
     "dependencies": {
         "bson": "6.4.0",
-        "hotpocket-nodejs-contract": "^0.5.10",
+        "hotpocket-nodejs-contract": "^0.7.3",
         "@vercel/ncc": "0.34.0"
     }
 }
