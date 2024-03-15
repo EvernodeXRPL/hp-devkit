@@ -1,6 +1,6 @@
 {
   "name": "hpdevkit",
-  "version": "0.6.5",
+  "version": "0.6.6",
   "license": "SEE LICENSE IN https://raw.githubusercontent.com/EvernodeXRPL/evernode-resources/main/license/evernode-license.pdf",
   "description": "Developer toolkit for HotPocket smart contract development",
   "scripts": {
@@ -18,7 +18,8 @@
   ],
   "homepage": "https://github.com/HotPocketDev/evernode-sdk",
   "dependencies": {
-    "commander": "9.4.0"
+    "commander": "9.4.0",
+    "evernode-js-client": "0.6.43"
   },
   "devDependencies": {
     "eslint": "8.3.0"

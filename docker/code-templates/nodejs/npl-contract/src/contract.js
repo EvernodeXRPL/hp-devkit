@@ -23,6 +23,12 @@ async function contract(ctx) {
     // there is a time-penalty.
     const isReadOnly = ctx.readonly;
 
+    // Access the HotPocket config.
+    const hpconfig = await ctx.getConfig();
+    // Wait only for half of roundtime for random number generation.
+    const timeout = Math.ceil(hpconfig.consensus.roundtime);
+
+
     // Process user inputs.
     // Loop through list of users who have sent us inputs.
     for (const user of ctx.users.list()) {
@@ -38,7 +44,7 @@ async function contract(ctx) {
             const message = JSON.parse(buf);
 
             // Pass the JSON message to our application logic component.
-            await app.handleRequest(user, message, isReadOnly);
+            await app.handleRequest(user, message, ctx.unl, timeout, isReadOnly);
         }
     }
 }

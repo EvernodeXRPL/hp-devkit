@@ -1,5 +1,7 @@
 const fs = require('fs');
 const appenv = require('../appenv');
+const kp = require('ripple-keypairs');
+const evernode = require("evernode-js-client")
 const { exec } = require('./child-proc');
 const {
     CONSTANTS,
@@ -28,6 +30,21 @@ function version() {
     error(`\n${CONSTANTS.npmPackageName} is not installed.`);
 }
 
+function list(platform) {
+    info("List templates\n");
+
+    try {
+        runOnNewContainer(CONSTANTS.codegenContainerName, null, null, null, null, platform ? `list ${platform}` : 'list', 'templates');
+    }
+    catch (e) {
+        error(`Listing templates failed.`);
+    }
+    finally {
+        if (isExists(CONSTANTS.codegenContainerName))
+            exec(`docker rm ${CONSTANTS.codegenContainerName}`, false);
+    }
+}
+
 function codeGen(platform, apptype, projName) {
     info("Code generator\n");
 
@@ -50,8 +67,13 @@ function codeGen(platform, apptype, projName) {
     }
 }
 
-function deploy(contractPath) {
+async function deploy(contractPath, options) {
     info(`command: deploy (cluster: ${appenv.cluster})`);
+
+    if (options.multiSig && !options.masterSec) {
+        error('Master secret is required to setup multi signing!');
+        return;
+    }
 
     initializeDeploymentCluster();
 
@@ -62,6 +84,56 @@ function deploy(contractPath) {
 
     executeOnManagementContainer(prepareBundleDir);
     exec(`docker cp ${contractPath} "${CONSTANTS.managementContainerName}:${CONSTANTS.bundleMount}"`);
+
+    // Prepare signers if multisig specified
+    if (options.multiSig) {
+        if (!options.masterAddr) {
+            const keypair = kp.deriveKeypair(options.masterSec);
+            options.masterAddr = kp.deriveAddress(keypair.publicKey);
+        }
+
+        let signers = [];
+        for (let i = 0; i < appenv.clusterSize; i++) {
+            const nodeSecret = kp.generateSeed({ algorithm: "ecdsa-secp256k1" });
+            const keypair = kp.deriveKeypair(nodeSecret);
+            const signerInfo = {
+                account: kp.deriveAddress(keypair.publicKey),
+                secret: nodeSecret,
+                weight: appenv.signerWeight
+            };
+
+            signers.push(signerInfo);
+
+            const disparatePath = `${CONSTANTS.bundleMount}/${CONSTANTS.disparateDir}/${i + 1}`;
+            executeOnManagementContainer(`mkdir -p ${disparatePath} && echo '${JSON.stringify(signerInfo, null, 2).replace(/"/g, '\\"')}' > ${disparatePath}/${options.masterAddr}.key`);
+        }
+
+        await evernode.Defaults.useNetwork(appenv.network);
+        const xrplApi = new evernode.XrplApi(null);
+        evernode.Defaults.set({
+            xrplApi: xrplApi
+        });
+        await xrplApi.connect();
+        const xrplAcc = new evernode.XrplAccount(options.masterAddr, options.masterSec);
+
+        try {
+            const totalWeights = signers.reduce((sum, x) => sum + x.weight, 0);
+            await xrplAcc.setSignerList(signers.map(s => {
+                return {
+                    account: s.account,
+                    weight: s.weight
+                };
+            }), { signerQuorum: Math.floor(totalWeights * appenv.signerQuorum) });
+            await xrplApi.disconnect();
+        }
+        catch (e) {
+            error('Error occurred while preparing the signer list', e);
+            await xrplApi.disconnect();
+            return;
+        }
+
+        info(`Multi signer setup for ${options.masterAddr} completed!`);
+    }
 
     // Sync contract bundle to all instance directories in the cluster.
     executeOnManagementContainer('cluster stop ; cluster sync ; cluster start');
@@ -157,6 +229,7 @@ function uninstall() {
 
 module.exports = {
     version,
+    list,
     codeGen,
     deploy,
     clean,

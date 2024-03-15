@@ -9,12 +9,20 @@ program
     .action(commands.version);
 
 program
+    .command('list [platform]')
+    .description('Lists existing templates in the specified platform. Lists all templates in the all platforms if unspecified.')
+    .action(commands.list);
+
+program
     .command('gen <platform> <app-type> <project-name>')
     .description('Generate HotPocket application development projects.')
     .action(commands.codeGen);
 
 program
     .command('deploy <contract-path>')
+    .option('-m, --multi-sig [multi-sig]', 'Multi signing enabled.')
+    .option('-a, --master-addr [master-addr]', 'Master address for multi signing.')
+    .option('-s, --master-sec [master-sec]', 'Master secret for multi signing.')
     .description('Deploy the specified directory to a HotPocket cluster.')
     .action(commands.deploy);
 

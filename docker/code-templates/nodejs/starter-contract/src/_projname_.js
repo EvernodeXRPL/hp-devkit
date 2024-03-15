@@ -8,16 +8,23 @@ export class _projname_ {
     sendOutput; // This function must be wired up by the caller.
 
     async handleRequest(user, message, isReadOnly) {
-
         // This sample application defines two simple messages. 'get' and 'set'.
         // It's up to the application to decide the structure and contents of messages.
 
-        if (message.type == 'get') {
+        if (message.type == 'stat') {
+
+            // Send response as the status.
+            await this.sendOutput(user, {
+                type: 'statResult',
+                data: 'Contract is online'
+            })
+        }
+        else if (message.type == 'get') {
 
             // Retrieved previously saved data and return to the user.
             const data = await this.getData();
             await this.sendOutput(user, {
-                type: 'data_result',
+                type: 'dataResult',
                 data: data
             })
         }
@@ -26,6 +33,11 @@ export class _projname_ {
             if (!isReadOnly) {
                 // Save the provided data into storage.
                 await this.setData(message.data);
+
+                await this.sendOutput(user, {
+                    type: 'dataResult',
+                    data: 'success'
+                })
             }
             else {
                 await this.sendOutput(user, {

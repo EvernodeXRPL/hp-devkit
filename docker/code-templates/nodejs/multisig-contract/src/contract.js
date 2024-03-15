@@ -23,6 +23,9 @@ async function contract(ctx) {
     // there is a time-penalty.
     const isReadOnly = ctx.readonly;
 
+    // This function is executed per each contract round.
+    await app.handleContractExecution(ctx);
+
     // Process user inputs.
     // Loop through list of users who have sent us inputs.
     for (const user of ctx.users.list()) {

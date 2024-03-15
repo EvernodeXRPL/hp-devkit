@@ -1,4 +1,5 @@
 const HotPocket = require('hotpocket-nodejs-contract');
+const bson = require('bson');
 const { _projname_ } = require('./_projname_');
 
 // HotPocket smart contract is defined as a function which takes the HotPocket contract context as an argument.
@@ -33,12 +34,12 @@ async function contract(ctx) {
             // Read the data buffer sent by user (this can be any kind of data like string, json or binary data).
             const buf = await ctx.users.read(input);
 
-            // Let's assume all data buffers for this contract are JSON.
+            // Let's assume all data buffers for this contract are binary.
             // In real-world apps, we need to gracefully filter out invalid data formats for our contract.
-            const message = JSON.parse(buf);
+            const msg = bson.deserialize(buf);
 
             // Pass the JSON message to our application logic component.
-            await app.handleRequest(user, message, isReadOnly);
+            await app.handleRequest(user, msg, isReadOnly);
         }
     }
 }
