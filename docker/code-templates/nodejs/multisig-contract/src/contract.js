@@ -47,4 +47,4 @@ async function contract(ctx) {
 }
 
 const hpc = new HotPocket.Contract();
-hpc.init(contract);
+hpc.init(contract, null, true);
