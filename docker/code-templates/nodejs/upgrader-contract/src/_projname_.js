@@ -154,7 +154,7 @@ exit $finalcode`;
 
             await user.send(bson.serialize({
                 type: "upgradeResult",
-                status: "success"
+                status: "ok"
             }));
         }
         catch (e) {
