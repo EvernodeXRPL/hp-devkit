@@ -278,7 +278,7 @@ function sync_instance {
     rm -rf $contract_dir/ledger_fs/* $contract_dir/contract_fs/*
     mkdir -p $contract_dir/contract_fs/seed
     cp -r $bundle_mount $contract_dir/contract_fs/seed/state
-    rm -r $contract_dir/contract_fs/seed/state/$disparate_dir
+    [ -d $contract_dir/contract_fs/seed/state/$disparate_dir ] && rm -r $contract_dir/contract_fs/seed/state/$disparate_dir
 
     # Copy non-syncable files if exist.
     [ -d "$bundle_mount/$disparate_dir/$i" ] && cp -r "$bundle_mount/$disparate_dir/$i/." "$contract_dir/contract_fs/seed/"
