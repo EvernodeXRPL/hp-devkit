@@ -9,8 +9,8 @@ const appenv = {
     hpUserPortBegin: process.env.HP_USER_PORT_BEGIN || 8081,
     hpPeerPortBegin: process.env.HP_PEER_PORT_BEGIN || 22861,
     network: process.env.HP_EV_NETWORK || 'mainnet',
-    signerWeight: process.env.HP_SIGNER_WEIGHT || 1,
-    signerQuorum: process.env.HP_SIGNER_QUORUM || 0.8
+    signerWeight: process.env.HP_MULTI_SIGNER_WEIGHT || 1,
+    signerQuorum: process.env.HP_MULTI_SIGNER_QUORUM || 0.8
 }
 
 Object.freeze(appenv);
