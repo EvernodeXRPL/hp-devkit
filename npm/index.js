@@ -3,6 +3,8 @@
 const { program } = require('commander');
 const commands = require('./lib/commands');
 
+program.name('hpdevkit');
+
 program
     .command('version')
     .description('Display the hpdevkit version.')
