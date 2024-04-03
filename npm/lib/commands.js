@@ -105,7 +105,7 @@ async function deploy(contractPath, options) {
             signers.push(signerInfo);
 
             const disparatePath = `${CONSTANTS.bundleMount}/${CONSTANTS.disparateDir}/${i + 1}`;
-            executeOnManagementContainer(`mkdir -p ${disparatePath} && echo '${JSON.stringify(signerInfo, null, 2).replace(/"/g, '\\"')}' > ${disparatePath}/${options.masterAddr}.key`);
+            executeOnManagementContainer(`mkdir -p ${disparatePath} && echo '${JSON.stringify(signerInfo).replace(/"/g, '\\"')}' | jq . > ${disparatePath}/${options.masterAddr}.key`);
         }
 
         await evernode.Defaults.useNetwork(appenv.network);
