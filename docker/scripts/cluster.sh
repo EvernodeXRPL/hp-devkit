@@ -145,7 +145,7 @@ function bind_mesh {
         let peer_port=$(($peer_port_begin + $i - 1))
         let user_port=$(($user_port_begin + $i - 1))
 
-        jq ".contract.id=$contract_id | .contract.roundtime=2000 | .mesh.port=$peer_port | .user.port=$user_port" $cfg_file > $cfg_file.tmp \
+        jq ".contract.id=$contract_id | .contract.consensus.roundtime=2000 | .mesh.port=$peer_port | .user.port=$user_port" $cfg_file > $cfg_file.tmp \
             && mv $cfg_file.tmp $cfg_file
 
         all_pubkeys[i]=$(jq --raw-output ".node.public_key" $cfg_file)
