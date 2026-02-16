@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y wget
 WORKDIR /build
 
 # Download and extract docker.
-RUN wget -O docker.deb https://download.docker.com/linux/ubuntu/dists/focal/pool/stable/amd64/docker-ce-cli_20.10.9~3-0~ubuntu-focal_amd64.deb
+RUN wget -O docker.deb https://download.docker.com/linux/ubuntu/dists/focal/pool/stable/amd64/docker-ce-cli_27.5.1-1~ubuntu.20.04~focal_amd64.deb
 RUN dpkg -x docker.deb docker-extracted
 
 # Download jq
