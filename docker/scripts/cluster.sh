@@ -277,7 +277,7 @@ function sync_instance {
     local contract_dir=$(contract_dir_mount_path $node)
     rm -rf $contract_dir/ledger_fs/* $contract_dir/contract_fs/*
     mkdir -p $contract_dir/contract_fs/seed
-    cp -r $bundle_mount $contract_dir/contract_fs/seed/state
+    cp -r $bundle_mount/. $contract_dir/contract_fs/seed/state
     [ -d $contract_dir/contract_fs/seed/state/$disparate_dir ] && rm -r $contract_dir/contract_fs/seed/state/$disparate_dir
 
     # Copy non-syncable files if exist.
